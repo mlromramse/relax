@@ -133,7 +133,7 @@ public class RelaxClient {
 				outputStreamWriter.close();
 			}
 
-//			response.updateFromUrlConnection(urlConnection);
+//			urlConnection.getHeaderFields();
 			httpStatus = HttpStatus.valueOfCode(((HttpURLConnection) urlConnection).getResponseCode());
 
 			if (httpStatus.isOK()) {

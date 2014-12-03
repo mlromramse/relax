@@ -18,6 +18,8 @@ public class RelaxServer extends Thread {
 	protected Path path;
 	private ServerSocket serverSocket;
 	protected Socket socket;
+	protected String charsetName = "UTF8";
+	private int timeoutMillis = 30000;
 
 	public RelaxServer(int port, Path path) throws IOException {
 		this.port = port;
@@ -31,6 +33,7 @@ public class RelaxServer extends Thread {
 		while (active) {
 			try {
 				socket = serverSocket.accept();
+				socket.setSoTimeout(timeoutMillis);
 				RelaxHandler handler = new RelaxHandler(this);
 				handler.start();
 			} catch (IOException e) {

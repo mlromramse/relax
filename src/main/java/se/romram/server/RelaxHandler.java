@@ -25,15 +25,28 @@ public class RelaxHandler extends Thread {
 		try {
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(relaxServer.socket.getInputStream()));
 			BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(relaxServer.socket.getOutputStream());
-			String request = bufferedReader.readLine();
-			log.debug(request);
-			bufferedOutputStream.write(request.getBytes());
+
+			while (!bufferedReader.ready()) ;
+			String buff = bufferedReader.readLine();
+			log.debug("[{}] {}", relaxServer.charsetName, buff);
+			byte[] request = buff.getBytes(relaxServer.charsetName);
+			log.debug(new String(request));
+			writeHeaders(bufferedOutputStream, 200, request);
+			bufferedOutputStream.write(request);
+
 			bufferedOutputStream.flush();
 			bufferedOutputStream.close();
+			bufferedReader.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
 		}
+	}
+
+	private static String HTTP_HEADER = "HTTP/1.1 %s OK\r\nContent-Type: text/plain\r\nContent-Length: %s\r\n\r\n";
+
+	private void writeHeaders(BufferedOutputStream bufferedOutputStream, int code, byte[] bytes) throws IOException {
+		bufferedOutputStream.write(String.format(HTTP_HEADER, code, bytes.length).getBytes());
 	}
 
 }

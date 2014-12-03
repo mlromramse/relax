@@ -1,3 +1,4 @@
+import org.junit.Ignore;
 import org.junit.Test;
 import se.romram.client.RelaxClient;
 import se.romram.server.RelaxServer;
@@ -31,17 +32,26 @@ public class RelaxTest {
 		server.headers("Server: MyRelaxingServer", "Content-Type: text/html")
 				.start();
 
-		RelaxClient relax = new RelaxClient();
-		relax.headers(DEFAULT_HEADERS)
+		RelaxClient relaxClient = new RelaxClient();
+		relaxClient.headers(DEFAULT_HEADERS)
 				.throwExceptions()
 				.get("http://localhost:2357");
-		relax.headers("Content-Type:application/x-www-form-urlencoded")
+		System.out.printf("Response [%s]: %s", relaxClient.getStatus().getCode(), relaxClient);
+		relaxClient.headers("Content-Type:application/x-www-form-urlencoded")
 				.body("Post content")
 				.post("http://localhost:2357/temp.html");
+		System.out.printf("Response [%s]: %s", relaxClient.getStatus().getCode(), relaxClient);
 
-		Thread.sleep(10000);
-		server.end();
-		Thread.sleep(5000);
+//		Thread.sleep(10000);
+//		server.end();
+//		Thread.sleep(5000);
+	}
+
+	@Test
+	@Ignore
+	public void startServer() throws IOException, InterruptedException {
+		new RelaxServer(2357, Paths.get(".")).start();
+		Thread.sleep(1000000);
 	}
 }
 
