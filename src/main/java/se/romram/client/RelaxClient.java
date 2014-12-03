@@ -2,18 +2,29 @@ package se.romram.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.romram.enums.HttpMethod;
+import se.romram.enums.HttpStatus;
+import se.romram.exceptions.UncheckedHttpStatusCodeException;
+import se.romram.exceptions.UncheckedMalformedURLException;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
-import java.net.URLConnection;
+import java.net.*;
+import java.util.Base64;
 
 /**
  * Created by micke on 2014-12-02.
  */
 public class RelaxClient {
 	private Logger log = LoggerFactory.getLogger(RelaxClient.class);
+	private HttpMethod httpMethod;
+	private int timeOutMillis = 30000;
+	private String charsetName = "UTF8";
+	private byte[] payload = null;
+	private StringBuffer result;
+	private HttpStatus httpStatus;
+	private boolean isExceptionsToBeThrown = false;
+	private URL url = null;
+
 	public RelaxClient headers(String... default_headers) {
 		return this;
 	}
@@ -22,119 +33,164 @@ public class RelaxClient {
 		return this;
 	}
 
+	public RelaxClient throwExceptions() {
+		isExceptionsToBeThrown = true;
+		return this;
+	}
+
 	public RelaxClient body(String body) {
 		return this;
 	}
 
+
 	public RelaxClient get(String urlAsString) {
-		return this;
+		httpMethod = HttpMethod.GET;
+		setUrl(urlAsString);
+		return doRequest();
 	}
 
 	public RelaxClient post(String urlAsString) {
+		httpMethod = HttpMethod.POST;
+		return doRequest();
+	}
+
+	public HttpStatus getStatus() {
+		return httpStatus;
+	}
+
+	public String toString() {
+		return result.toString();
+	}
+
+	/* Getters and Setters below */
+
+	private boolean hasPayload() {
+		if (payload == null) {
+			return false;
+		}
+		return true;
+	}
+
+	private RelaxClient setUrl(String urlAsString) {
+		try {
+			url = new URL(urlAsString);
+		} catch (MalformedURLException e) {
+			if (isExceptionsToBeThrown) {
+				throw new UncheckedMalformedURLException(e);
+			}
+		}
 		return this;
 	}
 
 	/**
 	 * This method does the actual communication to simplify the methods above.
-	 *
-	 * @param request
-	 *            A populated JCurlRequest object to the wanted resource.
-	 * @param response
-	 *            An instantiated JCurlResponse object.
 	 */
-	private static void doHttpCall(JCurlRequest request, JCurlResponse response) {
-		Logger log = LoggerFactory.getLogger(JCurl.class);
-		StringBuffer result = new StringBuffer();
+	private RelaxClient doRequest() {
+		result = new StringBuffer();
 		URLConnection urlConnection = null;
-		response.setRequestObject(request);
+//		response.setRequestObject(request);
 
-		request.updateCookies();
+//		request.updateCookies();
+
+		httpStatus = HttpStatus.OK;
 
 		try {
-			urlConnection = (URLConnection) request.getURL().openConnection();
+			urlConnection = (URLConnection) url.openConnection();
 			urlConnection.setDoInput(true);
 			if (urlConnection instanceof HttpURLConnection) {
-				if (request.hasPayload() && request.getMethod().equals(JCurlRequest.DELETE)) {
-					((HttpURLConnection) urlConnection).setRequestMethod(JCurlRequest.POST);
+				if (hasPayload() && httpMethod == HttpMethod.DELETE) {
+					((HttpURLConnection) urlConnection).setRequestMethod(HttpMethod.POST.name());
 				} else {
-					((HttpURLConnection) urlConnection).setRequestMethod(request.getMethod());
+					((HttpURLConnection) urlConnection).setRequestMethod(httpMethod.name());
 				}
 			}
-			urlConnection.setConnectTimeout(request.getTimeOutMillis());
-			urlConnection.setReadTimeout(request.getTimeOutMillis());
+			urlConnection.setConnectTimeout(timeOutMillis);
+			urlConnection.setReadTimeout(timeOutMillis);
 
-			if (request.getURL().getUserInfo() != null) {
+			if (url.getUserInfo() != null) {
 				String basicAuth = "Basic "
-						+ new String(new Base64().encode(request.getURL().getUserInfo().getBytes()));
+						+ new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));
 				urlConnection.setRequestProperty("Authorization", basicAuth);
 			}
 			urlConnection.setRequestProperty("Content-Length", "0");
-			for (String key : request.getProperties().keySet()) {
-				urlConnection.setRequestProperty(key, request.getProperties().get(key));
-			}
+//			for (String key : request.getProperties().keySet()) {
+//				urlConnection.setRequestProperty(key, request.getProperties().get(key));
+//			}
 
-			if (request.hasPayload()) {
-				if (request.getMethod().equals(JCurlRequest.DELETE)) {
+			if (hasPayload()) {
+				if (httpMethod == HttpMethod.DELETE) {
 					urlConnection.setRequestProperty("X-HTTP-Method-Override", "DELETE");
 				}
 				urlConnection.setDoOutput(true);
 				urlConnection.setRequestProperty("Content-Length",
-						"" + request.getPayload().getBytes(request.getCharsetName()).length);
+						"" + payload.length);
 
-				OutputStreamWriter outputStreamWriter = new OutputStreamWriter(urlConnection.getOutputStream(),
-						request.getCharsetName());
-				outputStreamWriter.write(request.getPayload());
+				OutputStreamWriter outputStreamWriter =
+						new OutputStreamWriter(urlConnection.getOutputStream(), charsetName);
+				outputStreamWriter.write(new String(payload));
+				// TODO Remove new String()
 				outputStreamWriter.flush();
 				outputStreamWriter.close();
 			}
 
-			response.updateFromUrlConnection(urlConnection);
+//			response.updateFromUrlConnection(urlConnection);
+			httpStatus = HttpStatus.valueOfCode(((HttpURLConnection) urlConnection).getResponseCode());
 
-			readInputStream(result, urlConnection.getInputStream(), request.getCharsetName());
+			if (httpStatus.isOK()) {
+				readInputStream(result, urlConnection.getInputStream(), charsetName);
+			} else {
+				log.error(httpStatus.toString());
+			}
 
 		} catch (SocketTimeoutException e) {
-			response.setResponseCodeAndMessage(408, "The socket connection timed out.");
-			log.error("The socket timed out after {} milliseconds.", request.getTimeOutMillis());
-			if (request.isExceptionsToBeThrown())
-				throw new JCurlSocketTimeoutException(e);
+			httpStatus = HttpStatus.REQUEST_TIMEOUT;
+			log.error(httpStatus.toString());
+			if (isExceptionsToBeThrown)
+				throw new UncheckedHttpStatusCodeException(httpStatus, e);
 		} catch (RuntimeException e) {
-			response.setResponseCodeAndMessage(500, "Internal server error.");
-			log.error(e.getMessage());
-			if (request.isExceptionsToBeThrown())
-				throw e;
+			httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+			log.error(httpStatus.toString());
+			if (isExceptionsToBeThrown)
+				throw new UncheckedHttpStatusCodeException(httpStatus, e);
 		} catch (MalformedURLException e) {
-			response.setResponseCodeAndMessage(400, "The url is malformed.");
-			log.error("The url '{}' is malformed.", request.getUrlAsString());
-			if (request.isExceptionsToBeThrown())
-				throw new JCurlMalformedURLException(e);
+			httpStatus = HttpStatus.BAD_REQUEST;
+			log.error(httpStatus.toString());
+			if (isExceptionsToBeThrown)
+				throw new UncheckedHttpStatusCodeException(httpStatus, e);
 		} catch (IOException e) {
 			if (urlConnection instanceof HttpURLConnection) {
 				try {
 					readInputStream(result, ((HttpURLConnection) urlConnection).getErrorStream(),
-							request.getCharsetName());
+							charsetName);
 				} catch (IOException e1) {
-					if (response.getResponseCode() < 0) {
-						response.setResponseCodeAndMessage(500, "Internal server error.");
-					}
-					if (request.isExceptionsToBeThrown()) {
-						if (e instanceof FileNotFoundException) {
-							throw new JCurlFileNotFoundException(e);
-						} else {
-							throw new JCurlIOException(e);
-						}
-					}
+					//TODO FIX
+					httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+					if (isExceptionsToBeThrown)
+						throw new UncheckedHttpStatusCodeException(httpStatus, e);
+					log.error("No response from server at {}", url);
+//					if (((HttpURLConnection) urlConnection).getResponseCode() < 0) {
+//						response.setResponseCodeAndMessage(500, "Internal server error.");
+//					}
+//					if (request.isExceptionsToBeThrown()) {
+//						if (e instanceof FileNotFoundException) {
+//							throw new JCurlFileNotFoundException(e);
+//						} else {
+//							throw new JCurlIOException(e);
+//						}
+//					}
 				}
 			} else {
-				response.setResponseCodeAndMessage(404, "Not Found.");
-				if (request.isExceptionsToBeThrown())
-					throw new JCurlFileNotFoundException(e);
+				httpStatus = HttpStatus.NOT_FOUND;
+				if (isExceptionsToBeThrown)
+					throw new UncheckedHttpStatusCodeException(httpStatus, e);
 			}
 		} finally {
 			if (urlConnection != null && urlConnection instanceof HttpURLConnection) {
 				((HttpURLConnection) urlConnection).disconnect();
 			}
 		}
-		response.setResponseString(result);
+//		response.setResponseString(result);
+		return this;
 	}
 
 	/**
@@ -165,7 +221,6 @@ public class RelaxClient {
 		bufferedReader.close();
 		streamReader.close();
 	}
-
 
 
 }
