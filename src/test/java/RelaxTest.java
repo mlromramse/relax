@@ -1,5 +1,9 @@
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 import se.romram.client.RelaxClient;
 import se.romram.server.RelaxServer;
 
@@ -11,6 +15,20 @@ import java.nio.file.Paths;
  */
 public class RelaxTest {
 	private static String[] DEFAULT_HEADERS = {"UserAgent:Relax"};
+
+	@Rule
+	public TestRule testRule = new TestRule() {
+		@Override
+		public Statement apply(Statement base, Description description) {
+			return new Statement() {
+				@Override
+				public void evaluate() throws Throwable {
+					System.out.println(description.getDisplayName());
+					base.evaluate();
+				}
+			};
+		}
+	};
 
 	@Test
 	public void testApacheGetOneliner() {
@@ -43,15 +61,15 @@ public class RelaxTest {
 		System.out.printf("Response [%s]: %s", relaxClient.getStatus().getCode(), relaxClient);
 
 //		Thread.sleep(10000);
-//		server.end();
-//		Thread.sleep(5000);
+		server.end();
+		Thread.sleep(5000);
 	}
 
 	@Test
 	@Ignore
 	public void startServer() throws IOException, InterruptedException {
-		new RelaxServer(2357, Paths.get(".")).start();
-		Thread.sleep(1000000);
+		new RelaxServer(2357, Paths.get(".")).run();
+//		Thread.sleep(1000000);
 	}
 }
 

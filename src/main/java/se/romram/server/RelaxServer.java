@@ -17,7 +17,6 @@ public class RelaxServer extends Thread {
 	private int port;
 	protected Path path;
 	private ServerSocket serverSocket;
-	protected Socket socket;
 	protected String charsetName = "UTF8";
 	private int timeoutMillis = 30000;
 
@@ -32,9 +31,11 @@ public class RelaxServer extends Thread {
 		log.info("The server is active and monitors port {}", port);
 		while (active) {
 			try {
-				socket = serverSocket.accept();
+				log.debug("Waiting for request!");
+				final Socket socket = serverSocket.accept();
+				log.debug("Socket accept!");
 				socket.setSoTimeout(timeoutMillis);
-				RelaxHandler handler = new RelaxHandler(this);
+				RelaxHandler handler = new RelaxHandler(socket, this);
 				handler.start();
 			} catch (IOException e) {
 				e.printStackTrace();

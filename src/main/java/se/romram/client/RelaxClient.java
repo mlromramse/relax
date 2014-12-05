@@ -139,7 +139,7 @@ public class RelaxClient {
 			if (httpStatus.isOK()) {
 				readInputStream(result, urlConnection.getInputStream(), charsetName);
 			} else {
-				log.error(httpStatus.toString());
+				log.error("{} Url: '{}'", httpStatus.toString(), url);
 			}
 
 		} catch (SocketTimeoutException e) {
