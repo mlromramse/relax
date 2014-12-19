@@ -31,9 +31,9 @@ public class RelaxServer extends Thread {
 		log.info("The server is active and monitors port {}", port);
 		while (active) {
 			try {
-				log.debug("Waiting for request!");
+//				log.debug("Waiting for request!");
 				final Socket socket = serverSocket.accept();
-				log.debug("Socket accept!");
+//				log.debug("Socket accept!");
 				socket.setSoTimeout(timeoutMillis);
 				RelaxHandler handler = new RelaxHandler(socket, this);
 				handler.start();
@@ -52,5 +52,10 @@ public class RelaxServer extends Thread {
 		// TODO Handle headers
 		return this;
 	}
+
+	public RelaxServer registerHandler(String s) {
+		return this;
+	}
+
 
 }

@@ -20,10 +20,9 @@ public class UncheckedHttpStatusCodeException extends RuntimeException {
 
 	@Override
 	public String getMessage() {
-		return String.format("UncheckedHttpStatusCodeException since %s '%s'. Exception %s"
+		return String.format("UncheckedHttpStatusCodeException since [%s] %s."
 				, httpStatus.getCode()
 				, httpStatus.getDescription()
-				, super.getMessage()
 		);
 	}
 

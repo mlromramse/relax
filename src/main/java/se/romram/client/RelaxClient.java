@@ -139,7 +139,10 @@ public class RelaxClient {
 			if (httpStatus.isOK()) {
 				readInputStream(result, urlConnection.getInputStream(), charsetName);
 			} else {
-				log.error("{} Url: '{}'", httpStatus.toString(), url);
+				if (isExceptionsToBeThrown)
+					throw new UncheckedHttpStatusCodeException(httpStatus);
+				else
+					log.error("{} Url: '{}'", httpStatus.toString(), url);
 			}
 
 		} catch (SocketTimeoutException e) {
@@ -148,8 +151,10 @@ public class RelaxClient {
 			if (isExceptionsToBeThrown)
 				throw new UncheckedHttpStatusCodeException(httpStatus, e);
 		} catch (RuntimeException e) {
-			httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-			log.error(httpStatus.toString());
+			if (! (e instanceof UncheckedHttpStatusCodeException)) {
+				httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+				log.error(httpStatus.toString());
+			}
 			if (isExceptionsToBeThrown)
 				throw new UncheckedHttpStatusCodeException(httpStatus, e);
 		} catch (MalformedURLException e) {
