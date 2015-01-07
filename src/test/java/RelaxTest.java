@@ -11,9 +11,16 @@ import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.romram.client.RelaxClient;
+import se.romram.handler.AbstractHandler;
+import se.romram.handler.DefaultFileHandler;
+import se.romram.handler.RelaxHandler;
+import se.romram.handler.TestHandler;
+import se.romram.server.RelaxRequest;
+import se.romram.server.RelaxResponse;
 import se.romram.server.RelaxServer;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.file.Paths;
 
 /**
@@ -22,6 +29,13 @@ import java.nio.file.Paths;
 public class RelaxTest {
 	private static Logger log = LoggerFactory.getLogger(RelaxTest.class);
 	private static String[] DEFAULT_HEADERS = {"UserAgent:Relax"};
+    private static int port = 2356;
+    private static String domain = "localhost";
+    private static String baseUrl = getBaseUrl(port);
+
+    private static String getBaseUrl(int port) {
+        return "http://" + domain + ":" + port;
+    }
 
 	@Rule
 	public TestRule testRule = new TestRule() {
@@ -39,19 +53,20 @@ public class RelaxTest {
 	};
 
 	@BeforeClass
-	public static void setup() {
+	public static void setup() throws IOException {
 		LogManager.getRootLogger().setLevel(Level.DEBUG);
+        new RelaxServer(port, new TestHandler()).start();
 	}
 
 	@Test
-	public void testApacheGetOneLiner() {
-		assertThat(new RelaxClient().get("http://localhost").toString(), containsString("It worked"));
+	public void testGetOneLiner() {
+		assertThat(new RelaxClient().get(baseUrl).toString(), containsString("It worked"));
 	}
 
 	@Test
-	public void testApacheGetOneLinerWithExceptions() {
+	public void testGetOneLinerWithExceptions() {
 		try {
-			log.debug("Response: %s", new RelaxClient().throwExceptions().get("http://localhost/missing"));
+			log.debug("Response: {}", new RelaxClient().throwExceptions().get(baseUrl + "/404?key=value1&key=value2"));
 			fail("You should not get here since an exception is expected.");
 		} catch (Exception e) {
 			log.debug("An expected exception '{}' was thrown with message '{}'.", e.getClass().getSimpleName(), e.getMessage());
@@ -59,29 +74,80 @@ public class RelaxTest {
 	}
 
 	@Test
-	public void testApacheGet() {
+	public void testGet() {
 		RelaxClient relaxClient = new RelaxClient();
-		relaxClient.get("http://localhost/abcdef");
+		relaxClient.get(baseUrl + "/500");
 		if (relaxClient.getStatus().isOK()) {
 			log.debug("Response [{}]: {}", relaxClient.getStatus().getCode(), relaxClient);
 			fail("Should not be found!");
 		}
 	}
 
-	@Test
+    @Test
+    public void testPost() {
+        RelaxClient relaxClient = new RelaxClient();
+        relaxClient.setPayload("This is the payload!").post(baseUrl + "/echo");
+        assertTrue(relaxClient.getStatus().isOK());
+        assertThat(relaxClient.toString(), containsString("This is the payload!"));
+    }
+
+    @Test
+    public void testRequestHeaderGet() {
+        RelaxClient relaxClient = new RelaxClient();
+        relaxClient.addRequestHeaders("Accept: text/plain").post(baseUrl + "/echo");
+        assertTrue(relaxClient.getStatus().isOK());
+        assertThat(relaxClient.toString(), containsString("Accept: text/plain"));
+    }
+
+    @Test
+    public void testOptions() {
+        RelaxClient relaxClient = new RelaxClient();
+        relaxClient.options(baseUrl);
+
+        assertTrue(relaxClient.getStatus().isOK());
+        assertThat(relaxClient.getResponseHeaderFieldsAsFormattedString(), containsString("Allow: HEAD,GET,POST,PUT"));
+    }
+
+    @Test
+    public void testCookie() throws IOException {
+        RelaxServer server = new RelaxServer(2367, new TestHandler()).addHeaders(
+                "Set-Cookie: aCookie=aValue"
+                , "Set-Cookie: expiredCookie=expired; Expires=Wed, 13 Jan 2001 22:23:01 GMT"
+                , "Set-Cookie: newCookie=cookieValue"
+        );
+        server.start();
+        RelaxClient relaxClient = new RelaxClient().useDefaultCookieManager();
+        relaxClient.get(getBaseUrl(2367));
+        System.out.println(relaxClient.getResponseHeaderFieldsAsFormattedString());
+        assertThat(relaxClient.getResponseHeaderFieldsAsFormattedString(), containsString("aCookie=aValue"));
+        assertThat(relaxClient.getResponseHeaderFieldsAsFormattedString(), containsString("expiredCookie=expired"));
+        relaxClient.get(getBaseUrl(2367));
+        String cookieRequestHeader = relaxClient.getCookieManager().getCookieRequestHeaderBuffer(relaxClient.getUrl()).toString();
+        assertThat(cookieRequestHeader, containsString("aCookie=aValue"));
+        assertThat(cookieRequestHeader, not(containsString("expiredCookie=expired")));
+    }
+
+    @Test
 	public void testRelaxCreateServer() throws IOException, InterruptedException {
-		RelaxServer server = new RelaxServer(2357, Paths.get("."));
-		server.headers("Server: MyRelaxingServer", "Content-Type: text/html")
+		RelaxServer server = new RelaxServer(2360, new RelaxHandler() {
+            @Override
+            public boolean handle(RelaxRequest request, RelaxResponse response) {
+                /* Simple echo handler */
+                response.respond(200, request.getRequestAsString());
+                return true;
+            }
+        });
+		server.addHeaders("Server: MyRelaxingServer", "Content-Type: text/html")
 				.start();
 
 		RelaxClient relaxClient = new RelaxClient();
-		relaxClient.headers(DEFAULT_HEADERS)
+		relaxClient.addRequestHeaders(DEFAULT_HEADERS)
 				.throwExceptions()
-				.get("http://localhost:2357");
+				.get("http://localhost:2360");
 		log.debug("Response [{}]: {}", relaxClient.getStatus().getCode(), relaxClient);
-		relaxClient.headers("Content-Type:application/x-www-form-urlencoded")
-				.body("Post content")
-				.post("http://localhost:2357/temp.html");
+		relaxClient.addRequestHeaders("Content-Type:application/x-www-form-urlencoded")
+				.setPayload("Post content")
+				.post("http://localhost:2360/temp.html");
 		log.debug("Response [{}]: {}", relaxClient.getStatus().getCode(), relaxClient);
 
 //		Thread.sleep(10000);
@@ -89,13 +155,45 @@ public class RelaxTest {
 		Thread.sleep(500);
 	}
 
-	@Test
+    @Test
+    public void testRelaxCreateServerWithNotFoundMessage() throws IOException, InterruptedException {
+        RelaxServer server = new RelaxServer(2361, new RelaxHandler() {
+            @Override
+            public boolean handle(RelaxRequest request, RelaxResponse response) {
+                /* Simple not found handler */
+                response.respond(404, "");
+                return true;
+            }
+        });
+        server.addHeaders("Server: MyRelaxingServer", "Content-Type: text/html").start();
+
+        RelaxClient relaxClient = new RelaxClient();
+        relaxClient.addRequestHeaders(DEFAULT_HEADERS)
+//                .throwExceptions()
+                .get("http://localhost:2361");
+        log.debug("Response [{}]: {}", relaxClient.getStatus().getCode(), relaxClient);
+        relaxClient.addRequestHeaders("Content-Type:application/x-www-form-urlencoded")
+                .setPayload("Post content")
+                .post("http://localhost:2361/temp.html");
+        log.debug("Response [{}]: {}", relaxClient.getStatus().getCode(), relaxClient);
+
+//		Thread.sleep(10000);
+        server.end();
+        Thread.sleep(500);
+    }
+
+    @Test
 	@Ignore
 	public void startServer() throws IOException, InterruptedException {
-		new RelaxServer(2357, Paths.get("."))
-				.registerHandler("*")
-				.start();
-		new RelaxServer(2358, Paths.get(".")).start();
+		new RelaxServer(2357, new RelaxHandler() {
+            @Override
+            public boolean handle(RelaxRequest request, RelaxResponse response) {
+//                response.addHeaders("Set-Cookie: session=" + request.getQueryMap().get("thread").get(0));
+                response.respond(200, "Hello \n" + request.getRelaxServer().getStats());
+                return true;
+            }
+        }).start();
+		new RelaxServer(2358, new DefaultFileHandler(".")).start();
 		Thread.sleep(1000000);
 	}
 }

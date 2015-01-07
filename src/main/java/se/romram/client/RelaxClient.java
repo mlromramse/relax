@@ -2,6 +2,8 @@ package se.romram.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.romram.cookie.RelaxCookie;
+import se.romram.cookie.RelaxCookieManager;
 import se.romram.enums.HttpMethod;
 import se.romram.enums.HttpStatus;
 import se.romram.exceptions.UncheckedHttpStatusCodeException;
@@ -9,7 +11,7 @@ import se.romram.exceptions.UncheckedMalformedURLException;
 
 import java.io.*;
 import java.net.*;
-import java.util.Base64;
+import java.util.*;
 
 /**
  * Created by micke on 2014-12-02.
@@ -24,24 +26,57 @@ public class RelaxClient {
 	private HttpStatus httpStatus;
 	private boolean isExceptionsToBeThrown = false;
 	private URL url = null;
+    private RelaxCookieManager cookieManager;
+    private Map<String, List<String>> requestHeaderFields = new HashMap<>();
+    private Map<String, List<String>> responseHeaderFields;
 
-	public RelaxClient headers(String... default_headers) {
+	public RelaxClient addRequestHeaders(String... headersArr) {
+        for (String compoundHeader : headersArr) {
+            String[] splitHeader = compoundHeader.split(":");
+            String key = splitHeader[0].trim();
+            String value = splitHeader[1].trim();
+            List<String> valueList = requestHeaderFields.get(key);
+            if (valueList == null) {
+                valueList = new ArrayList<>();
+            }
+            valueList.add(value);
+            requestHeaderFields.put(key, valueList);
+        }
 		return this;
 	}
 
-	public RelaxClient useCookies() {
-		return this;
+	public RelaxClient useDefaultCookieManager() {
+		return useCookieManager(new RelaxCookieManager());
 	}
 
-	public RelaxClient throwExceptions() {
+    public RelaxClient useCookieManager(RelaxCookieManager relaxCookieManager) {
+        cookieManager = relaxCookieManager;
+        return this;
+    }
+
+    public RelaxCookieManager getCookieManager() {
+        return cookieManager;
+    }
+
+    public RelaxClient throwExceptions() {
 		isExceptionsToBeThrown = true;
 		return this;
 	}
 
-	public RelaxClient body(String body) {
-		return this;
+	public RelaxClient setPayload(String payload) {
+        try {
+            this.payload = payload.getBytes(charsetName);
+        } catch (UnsupportedEncodingException e) {
+            log.error("The selected charset '{}' is not supported.", charsetName);
+        }
+        return this;
 	}
 
+    public RelaxClient head(String urlAsString) {
+        httpMethod = HttpMethod.HEAD;
+        setUrl(urlAsString);
+        return doRequest();
+    }
 
 	public RelaxClient get(String urlAsString) {
 		httpMethod = HttpMethod.GET;
@@ -51,15 +86,78 @@ public class RelaxClient {
 
 	public RelaxClient post(String urlAsString) {
 		httpMethod = HttpMethod.POST;
+        setUrl(urlAsString);
 		return doRequest();
 	}
 
-	public HttpStatus getStatus() {
+    public RelaxClient put(String urlAsString) {
+        httpMethod = HttpMethod.PUT;
+        setUrl(urlAsString);
+        return doRequest();
+    }
+
+    public RelaxClient delete(String urlAsString) {
+        httpMethod = HttpMethod.DELETE;
+        setUrl(urlAsString);
+        return doRequest();
+    }
+
+    public RelaxClient trace(String urlAsString) {
+        httpMethod = HttpMethod.TRACE;
+        setUrl(urlAsString);
+        return doRequest();
+    }
+
+    public RelaxClient options(String urlAsString) {
+        httpMethod = HttpMethod.OPTIONS;
+        setUrl(urlAsString);
+        return doRequest();
+    }
+
+    public RelaxClient connect(String urlAsString) {
+        httpMethod = HttpMethod.CONNECT;
+        setUrl(urlAsString);
+        return doRequest();
+    }
+
+    public RelaxClient patch(String urlAsString) {
+        httpMethod = HttpMethod.PATCH;
+        setUrl(urlAsString);
+        return doRequest();
+    }
+
+    public HttpStatus getStatus() {
 		return httpStatus;
 	}
 
+    public URL getUrl() {
+        return url;
+    }
+
+    public Map<String, List<String>> getResponseHeaderFields() {
+        return responseHeaderFields;
+    }
+
+    public String getResponseHeaderFieldsAsFormattedString() {
+        StringBuilder result = new StringBuilder();
+        for (String key : getResponseHeaderFields().keySet()) {
+            if (key != null) {
+                result.append(key);
+                result.append(": ");
+                List<String> values = getResponseHeaderFields().get(key);
+                for (String value : values) {
+                    result.append(result.charAt(result.length() - 2) == ':' ? value : ", " + value);
+                }
+            } else {
+                result.append(getResponseHeaderFields().get(key).get(0));
+            }
+            result.append("\r\n");
+        }
+        return result.toString();
+    }
+
 	public String toString() {
-		return result.toString();
+		return result == null ? "null" : result.toString();
 	}
 
 	/* Getters and Setters below */
@@ -88,53 +186,33 @@ public class RelaxClient {
 	private RelaxClient doRequest() {
 		result = new StringBuffer();
 		URLConnection urlConnection = null;
-//		response.setRequestObject(request);
-
-//		request.updateCookies();
 
 		httpStatus = HttpStatus.OK;
 
 		try {
-			urlConnection = (URLConnection) url.openConnection();
-			urlConnection.setDoInput(true);
-			if (urlConnection instanceof HttpURLConnection) {
-				if (hasPayload() && httpMethod == HttpMethod.DELETE) {
-					((HttpURLConnection) urlConnection).setRequestMethod(HttpMethod.POST.name());
-				} else {
-					((HttpURLConnection) urlConnection).setRequestMethod(httpMethod.name());
-				}
-			}
-			urlConnection.setConnectTimeout(timeOutMillis);
-			urlConnection.setReadTimeout(timeOutMillis);
+            urlConnection = getUrlConnection(urlConnection);
 
-			if (url.getUserInfo() != null) {
-				String basicAuth = "Basic "
-						+ new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));
-				urlConnection.setRequestProperty("Authorization", basicAuth);
-			}
-			urlConnection.setRequestProperty("Content-Length", "0");
-//			for (String key : request.getProperties().keySet()) {
-//				urlConnection.setRequestProperty(key, request.getProperties().get(key));
-//			}
+            authorize(urlConnection);
+
+            setRequestHeaderFields(urlConnection);
 
 			if (hasPayload()) {
 				if (httpMethod == HttpMethod.DELETE) {
 					urlConnection.setRequestProperty("X-HTTP-Method-Override", "DELETE");
+                    //TODO: Manage correct DELETE if available in current java version.
 				}
 				urlConnection.setDoOutput(true);
 				urlConnection.setRequestProperty("Content-Length",
 						"" + payload.length);
 
-				OutputStreamWriter outputStreamWriter =
-						new OutputStreamWriter(urlConnection.getOutputStream(), charsetName);
-				outputStreamWriter.write(new String(payload));
-				// TODO Remove new String()
-				outputStreamWriter.flush();
-				outputStreamWriter.close();
+                urlConnection.getOutputStream().write(payload);
+                urlConnection.getOutputStream().flush();
+                urlConnection.getOutputStream().close();
 			}
 
-//			urlConnection.getHeaderFields();
+			responseHeaderFields = urlConnection.getHeaderFields();
 			httpStatus = HttpStatus.valueOfCode(((HttpURLConnection) urlConnection).getResponseCode());
+            updateCookiesFromResponse(responseHeaderFields);
 
 			if (httpStatus.isOK()) {
 				readInputStream(result, urlConnection.getInputStream(), charsetName);
@@ -198,7 +276,57 @@ public class RelaxClient {
 		return this;
 	}
 
-	/**
+    private void updateCookiesFromResponse(Map<String, List<String>> responseHeaderFields) {
+        if (cookieManager != null) {
+            cookieManager.updateCookiesFromHeaderFields(responseHeaderFields);
+        }
+    }
+
+    private void setRequestHeaderFields(URLConnection urlConnection) {
+        urlConnection.setRequestProperty("Content-Length", "0");
+        updateRequestHeaderFieldsWithCookies();
+        for (String key : requestHeaderFields.keySet()) {
+            String values = "";
+            for (String value : requestHeaderFields.get(key)) {
+                values += values.length()==0 ? value : "," + value;
+            }
+            urlConnection.setRequestProperty(key, values);
+        }
+    }
+
+    private void updateRequestHeaderFieldsWithCookies() {
+        if (cookieManager != null) {
+            StringBuffer cookieString = cookieManager.getCookieRequestHeaderBuffer(url);
+            if (cookieString.length() != 0) {
+                addRequestHeaders("Cookie: " + cookieString.toString());
+            }
+        }
+    }
+
+    private void authorize(URLConnection urlConnection) {
+        if (url.getUserInfo() != null) {
+            String basicAuth = "Basic "
+                    + new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));
+            urlConnection.setRequestProperty("Authorization", basicAuth);
+        }
+    }
+
+    private URLConnection getUrlConnection(URLConnection urlConnection) throws IOException {
+        urlConnection = (URLConnection) url.openConnection();
+        urlConnection.setDoInput(true);
+        if (urlConnection instanceof HttpURLConnection) {
+            if (hasPayload() && httpMethod == HttpMethod.DELETE) {
+                ((HttpURLConnection) urlConnection).setRequestMethod(HttpMethod.POST.name());
+            } else {
+                ((HttpURLConnection) urlConnection).setRequestMethod(httpMethod.name());
+            }
+        }
+        urlConnection.setConnectTimeout(timeOutMillis);
+        urlConnection.setReadTimeout(timeOutMillis);
+        return urlConnection;
+    }
+
+    /**
 	 * Local helper method that reads data from an input stream.
 	 *
 	 * @param result
