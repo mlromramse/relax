@@ -126,7 +126,9 @@ public class RelaxClient {
         return doRequest();
     }
 
-    public HttpStatus getStatus() {
+	/* Getters and Setters below */
+
+	public HttpStatus getStatus() {
 		return httpStatus;
 	}
 
@@ -159,8 +161,6 @@ public class RelaxClient {
 	public String toString() {
 		return result == null ? "null" : result.toString();
 	}
-
-	/* Getters and Setters below */
 
 	private boolean hasPayload() {
 		if (payload == null) {

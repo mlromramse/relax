@@ -59,7 +59,7 @@ public class RelaxResponse {
         try {
             response = responseAsString.getBytes(relaxServer.charsetName);
         } catch (UnsupportedEncodingException e) {
-            log.warn("UnsupportedEncodingException occurred, response payload not encoded!");
+            log.warn("UnsupportedEncodingException occurred, response payload not decoded!");
             response = responseAsString.getBytes();
         }
         return respond(status, response, values);
@@ -83,7 +83,7 @@ public class RelaxResponse {
                 }
 //                try {
 //                    response = response.getBytes(relaxServer.charsetName);
-                    contentLength = response.length;
+                contentLength = response.length;
 //                } catch (UnsupportedEncodingException e) {
 //                    e.printStackTrace();
 //                }
@@ -91,7 +91,7 @@ public class RelaxResponse {
                 contentLength = Integer.parseInt(String.format("%s", values));
             }
             addHeaders("Content-Length: " + contentLength);
-            addHeaders("Content-Type: " + contentType);
+            addHeaders("Content-Type: " + contentType + ";encoding: " + relaxServer.charsetName);
             writeHeaders(bufferedOutputStream, status);
             bufferedOutputStream.write(response);
 

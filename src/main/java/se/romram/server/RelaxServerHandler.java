@@ -26,7 +26,7 @@ public class RelaxServerHandler extends AbstractHandler {
                 return true;
             }
             if ("OPTIONS".equalsIgnoreCase(relaxRequest.getMethod())) {
-                relaxResponse.addHeaders("Allow: HEAD,GET,POST,PUT,DELETE,TRACE,OPTIONS,PATCH").respond(200, null);
+                relaxResponse.addHeaders("Allow: HEAD,GET,POST,PUT,DELETE,TRACE,OPTIONS,PATCH").respond(200, "");
                 return true;
             }
         }

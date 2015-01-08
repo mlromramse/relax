@@ -84,7 +84,7 @@ public class RelaxTest {
 	}
 
     @Test
-    public void testPost() {
+    public void testPost() throws InterruptedException {
         RelaxClient relaxClient = new RelaxClient();
         relaxClient.setPayload("This is the payload!").post(baseUrl + "/echo");
         assertTrue(relaxClient.getStatus().isOK());

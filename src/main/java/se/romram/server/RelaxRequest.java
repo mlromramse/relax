@@ -170,7 +170,7 @@ public class RelaxRequest {
 
                 if (contentLength > 0) {
                     payloadBuffer = new StringBuffer();
-                    char[] buf = new char[contentLength-1];
+                    char[] buf = new char[contentLength];
                     int r = bufferedReader.read(buf);
                     payloadBuffer.append(buf);
                     requestBuffer.append(payloadBuffer);
