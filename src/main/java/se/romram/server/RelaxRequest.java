@@ -27,7 +27,7 @@ public class RelaxRequest {
 
     private String method;
     private String pathAndQuery;
-    private String path;
+    private String path = "";
     private String queryString;
     private String host;
     private String userAgent;
@@ -150,8 +150,12 @@ public class RelaxRequest {
             try {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
+				if (bufferedReader == null) {
+					System.out.println("BREAK!");
+				}
+
                 requestBuffer = new StringBuffer();
-                for (String line; !(line = bufferedReader.readLine()).isEmpty(); ) {
+                for (String line; (line = bufferedReader.readLine())!=null && !line.isEmpty(); ) {
                     requestBuffer.append(line);
                     requestBuffer.append("\n");
                 }
@@ -175,10 +179,11 @@ public class RelaxRequest {
                     payloadBuffer.append(buf);
                     requestBuffer.append(payloadBuffer);
                 }
-            } catch (Throwable ex) {
-                log.error("An exception of type {} with message '{}' was encountered when reading the inputstream."
+            } catch (IOException ex) {
+                log.error("An exception of type {} with message '{}' was encountered when reading the inputstream from socket [{}]."
                         , ex.getClass().getSimpleName()
                         , ex.getMessage()
+						, socket.isClosed() ? "closed" : "open"
                 );
             }
         }

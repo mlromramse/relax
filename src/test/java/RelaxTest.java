@@ -193,7 +193,7 @@ public class RelaxTest {
                 return true;
             }
         }).start();
-		new RelaxServer(2358, new DefaultFileHandler(".")).start();
+		new RelaxServer(2358, new DefaultFileHandler("src/main/resources")).start();
 		Thread.sleep(1000000);
 	}
 }

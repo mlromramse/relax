@@ -14,6 +14,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by micke on 2014-12-02.
@@ -26,20 +28,49 @@ public class DefaultFileHandler implements RelaxHandler {
     private String pathAsString;
     private Path path;
 
+	private Map<String, String> extensionContentTypeMap;
+
 	public DefaultFileHandler(String pathAsString) {
         path = FileSystems.getDefault().getPath(pathAsString);
         this.pathAsString = pathAsString;
+		addExtensionContentType("js", "application/javascript");
+		addExtensionContentType("json", "application/json");
+		addExtensionContentType("pdf", "application/pdf");
+		addExtensionContentType("xml", "application/xml");
+		addExtensionContentType("png", "image/png");
+		addExtensionContentType("jpg", "image/jpeg");
+		addExtensionContentType("jpeg", "image/jpeg");
+		addExtensionContentType("ico", "image/x-icon");
+		addExtensionContentType("gif", "image/gif");
+		addExtensionContentType("svg", "image/svg+xml");
+		addExtensionContentType("css", "text/css");
+		addExtensionContentType("csv", "text/csv");
+		addExtensionContentType("htm", "text/html");
+		addExtensionContentType("html", "text/html");
+		addExtensionContentType("txt", "text/plain");
+		addExtensionContentType("text", "text/plain");
+		addExtensionContentType("rtf", "text/rtf");
+		addExtensionContentType("md", "text/x-markdown");
     }
+
+	public DefaultFileHandler addExtensionContentType(String extension, String contentType) {
+		if (extensionContentTypeMap == null) {
+			extensionContentTypeMap = new ConcurrentHashMap<>();
+		}
+		extensionContentTypeMap.put(extension, contentType);
+		return this;
+	}
 
     @Override
     public boolean handle(RelaxRequest request, RelaxResponse response) {
-        /*
         log.debug("A {} request for resource {} with queryParameters '{}' has been received from user agent '{}'."
                 , request.getMethod()
                 , request.getRequestURL()
                 , request.getQueryString()
                 , request.getUserAgent());
-                */
+		if (request.getMethod() == null) {
+			log.warn("Empty request '{}'", request.getRequestBuffer());
+		}
         Path filePath = FileSystems.getDefault().getPath(pathAsString, request.getPath());
         //log.debug(filePath.toAbsolutePath().toString());
 
@@ -58,7 +89,7 @@ public class DefaultFileHandler implements RelaxHandler {
 
         response.addHeaders("Allow: " + ALLOWED);
         response.respond(405, "");
-        return false;
+        return true;
     }
 
     private boolean head(Path filePath, RelaxRequest request, RelaxResponse response) {
@@ -70,7 +101,7 @@ public class DefaultFileHandler implements RelaxHandler {
             return true;
         } catch (IOException e) {
             response.respond(404, "");
-            return false;
+            return true;
         }
 
     }
@@ -79,15 +110,20 @@ public class DefaultFileHandler implements RelaxHandler {
         try {
             byte[] payload = getPayload(filePath);
             long lastModified = filePath.toFile().lastModified();
-            if (filePath.toFile().getName().endsWith(".png")) {
-                response.setContentType("image/png");
+            int extP = filePath.toFile().getName().lastIndexOf('.');
+			if (extP != -1 && extP<filePath.toFile().getName().length()) {
+				String ext = filePath.toFile().getName().substring(extP+1);
+				String contentType = extensionContentTypeMap.get(ext);
+				if (contentType != null) {
+					response.setContentType(contentType);
+				}
             }
             response.addHeaders("Last-Modified: " + HTTPDate.formatDate(lastModified));
             response.respond(200, payload);
             return true;
         } catch (IOException e) {
             response.respond(404, "");
-            return false;
+            return true;
         }
 
     }
@@ -122,7 +158,7 @@ public class DefaultFileHandler implements RelaxHandler {
             return true;
         } catch (IOException e) {
             response.respond(500, "File was not created due to %s with message '%s'!", e.getClass().getSimpleName(), e.getMessage());
-            return false;
+            return true;
         }
     }
 
@@ -133,7 +169,7 @@ public class DefaultFileHandler implements RelaxHandler {
             return true;
         } catch (IOException e) {
             response.respond(404, "File not found at " + filePath.toAbsolutePath().toString());
-            return false;
+            return true;
         }
     }
 

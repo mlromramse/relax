@@ -46,7 +46,7 @@ public class RelaxResponse {
     }
 
     protected String getHeaders() {
-        StringBuilder result = new StringBuilder();
+        StringBuffer result = new StringBuffer();
         for (String header : headerList) {
             result.append(header);
             result.append("\r\n");
@@ -65,13 +65,10 @@ public class RelaxResponse {
         return respond(status, response, values);
     }
 
-    public RelaxResponse respond(int status, byte[] response, Object... values) {
+    public synchronized RelaxResponse respond(int status, byte[] response, Object... values) {
         Socket socket = relaxRequest.getSocket();
         BufferedOutputStream bufferedOutputStream;
-//		log.info("A request has been received from {} and will be handled by thread {}."
-//				, socket.getInetAddress().getHostAddress()
-//				, Thread.currentThread().getId()
-//		);
+
         try {
             bufferedOutputStream = new BufferedOutputStream(socket.getOutputStream());
 
@@ -79,15 +76,11 @@ public class RelaxResponse {
 
             if (response.length > 0) {
                 if (values.length > 0) {
-                    response = String.format(new String(response), values).getBytes(relaxServer.charsetName);
+                    response = String.format(new String(response, relaxServer.charsetName), values).getBytes(relaxServer.charsetName);
                 }
-//                try {
-//                    response = response.getBytes(relaxServer.charsetName);
                 contentLength = response.length;
-//                } catch (UnsupportedEncodingException e) {
-//                    e.printStackTrace();
-//                }
             } else if (values.length > 0) {
+				/* Special behaviour for HEAD */
                 contentLength = Integer.parseInt(String.format("%s", values));
             }
             addHeaders("Content-Length: " + contentLength);
@@ -97,9 +90,6 @@ public class RelaxResponse {
 
             bufferedOutputStream.flush();
             bufferedOutputStream.close();
-//			log.debug("The input string for thread {} is closed."
-//					, Thread.currentThread().getId()
-//			);
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -111,9 +101,6 @@ public class RelaxResponse {
                     e.printStackTrace();
                 }
             }
-//			log.debug("The handler serving thread {} is done."
-//					, Thread.currentThread().getId()
-//			);
         }
         return this;
     }

@@ -50,7 +50,7 @@ public class RelaxServer extends Thread {
 			try {
 //				log.debug("Waiting for request!");
 				final Socket socket = serverSocket.accept();
-//				log.debug("Socket accept!");
+				log.debug("Socket accept!" + socket.getRemoteSocketAddress());
 				socket.setSoTimeout(timeoutMillis);
                 RelaxServer server = this;
 
