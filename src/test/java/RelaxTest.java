@@ -22,6 +22,7 @@ import se.romram.server.RelaxServer;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Paths;
+import java.util.concurrent.Executors;
 
 /**
  * Created by micke on 2014-11-28.
@@ -185,14 +186,25 @@ public class RelaxTest {
     @Test
 	@Ignore
 	public void startServer() throws IOException, InterruptedException {
+        org.apache.log4j.Logger.getRootLogger().setLevel(Level.ERROR);
 		new RelaxServer(2357, new RelaxHandler() {
             @Override
             public boolean handle(RelaxRequest request, RelaxResponse response) {
 //                response.addHeaders("Set-Cookie: session=" + request.getQueryMap().get("thread").get(0));
+                log.info("A {} request for resource {} has been received."
+                        , request.getMethod()
+                        , request.getRequestURL()
+                );
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                response.addHeaders("thread: " + Thread.currentThread().getId());
                 response.respond(200, "Hello \n" + request.getRelaxServer().getStats());
                 return true;
             }
-        }).start();
+        }, Executors.newFixedThreadPool(30)).start();
 		new RelaxServer(2358, new DefaultFileHandler("src/main/resources")).start();
 		Thread.sleep(1000000);
 	}

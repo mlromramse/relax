@@ -50,9 +50,9 @@ public class RelaxServer extends Thread {
 			try {
 //				log.debug("Waiting for request!");
 				final Socket socket = serverSocket.accept();
-				log.debug("Socket accept!" + socket.getRemoteSocketAddress());
+//				log.debug("Socket accept!" + socket.getRemoteSocketAddress());
 				socket.setSoTimeout(timeoutMillis);
-                RelaxServer server = this;
+                final   RelaxServer server = this;
 
                 Runnable request = new Runnable() {
                     @Override

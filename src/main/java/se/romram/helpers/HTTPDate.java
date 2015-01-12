@@ -11,19 +11,32 @@ import java.util.TimeZone;
  */
 public class HTTPDate {
     private static SimpleDateFormat HTTP_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
-
-    static public String formatDate(Date date) {
-        if (date == null) return null;
+    static String sync = "syncObject";
+    static {
         HTTP_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
-        return HTTP_DATE_FORMAT.format(date);
     }
 
-    static public String formatDate(long epoch) {
-        return formatDate(new Date(epoch));
+    public static String formatDate(Date date) {
+        if (date == null) return null;
+        synchronized (sync) {
+            return HTTP_DATE_FORMAT.format(date);
+        }
     }
 
-    static public Date parseDate(String dateAsGMTString) throws ParseException {
-        return HTTP_DATE_FORMAT.parse(dateAsGMTString);
+    public static String formatDate(long epoch) {
+        try {
+            return formatDate(new Date(epoch));
+        } catch (Exception e) {
+            System.out.println("EPOCH: " + epoch);
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    public static Date parseDate(String dateAsGMTString) throws ParseException {
+        synchronized (sync) {
+            return HTTP_DATE_FORMAT.parse(dateAsGMTString);
+        }
     }
 
 }

@@ -120,7 +120,7 @@ public class RelaxCookie {
                 }
                 if (EXPIRES.equalsIgnoreCase(name)) {
                     try {
-                        setExpiryDate(HTTPDate.parseDate(value));
+                        setExpiryDate(new HTTPDate().parseDate(value));
                     } catch (ParseException e) {
                         log.error("Cookie expiration date ({}) is not parsable.", value);
                     }
