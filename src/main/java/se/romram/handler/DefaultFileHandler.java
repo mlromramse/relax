@@ -94,7 +94,7 @@ public class DefaultFileHandler implements RelaxHandler {
 
     private boolean head(Path filePath, RelaxRequest request, RelaxResponse response) {
         try {
-            byte[] payload = getPayload(filePath);
+            byte[] payload = getPayload(filePath, request, response);
             long lastModified = filePath.toFile().lastModified();
             response.addHeaders("Last-Modified: " + HTTPDate.formatDate(lastModified));
             response.respond(204, "", payload.length);
@@ -108,7 +108,7 @@ public class DefaultFileHandler implements RelaxHandler {
 
     private boolean get(Path filePath, RelaxRequest request, RelaxResponse response) {
         try {
-            byte[] payload = getPayload(filePath);
+            byte[] payload = getPayload(filePath, request, response);
             long lastModified = filePath.toFile().lastModified();
             int extP = filePath.toFile().getName().lastIndexOf('.');
 			if (extP != -1 && extP<filePath.toFile().getName().length()) {
@@ -128,20 +128,35 @@ public class DefaultFileHandler implements RelaxHandler {
 
     }
 
-    private byte[] getPayload(Path filePath) throws IOException {
+    private byte[] getPayload(Path filePath, RelaxRequest request, RelaxResponse response) throws IOException {
+        boolean isHTMLAware = request.getAccept().toLowerCase().contains("text/html");
         if (filePath.toFile().isFile()) {
             return Files.readAllBytes(filePath);
         } else if (filePath.toFile().isDirectory()) {
             File[] files = filePath.toFile().listFiles();
             StringBuffer buf = new StringBuffer();
+            if (isHTMLAware) {
+                response.setContentType("text/html");
+                buf.append("<html><head></head><body><table>");
+            }
             for (File file : files) {
+                if (isHTMLAware) buf.append("<tr><td>");
                 buf.append(new Date(file.lastModified()));
-                buf.append(" ");
+                if (isHTMLAware) buf.append("</td><td>"); else buf.append(" ");
                 buf.append(String.format("%10d", file.length()));
-                buf.append(" ");
+                if (isHTMLAware) {
+                    String path = request.getPath();
+                    if (path.charAt(path.length()-1) != '/') path += "/";
+                    buf.append("</td><td><a href=\"" + path + file.getName() + "\">");
+                } else {
+                    buf.append(" ");
+                }
                 buf.append(file.getName());
                 if (file.isDirectory()) buf.append("/");
-                buf.append("\n");
+                if (isHTMLAware) buf.append("</a></td></tr>"); else buf.append("\n");
+            }
+            if (isHTMLAware) {
+                buf.append("</table></body></html>");
             }
             return buf.toString().getBytes();
         }

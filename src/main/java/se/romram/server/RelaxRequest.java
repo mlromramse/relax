@@ -75,6 +75,11 @@ public class RelaxRequest {
         return userAgent;
     }
 
+    public String getAccept() {
+        parseRequest();
+        return accept;
+    }
+
     public int getContentLength() {
         return contentLength;
     }
