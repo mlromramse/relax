@@ -106,9 +106,23 @@ public class RelaxResponse {
     }
 
     private static String HTTP_HEADER = "HTTP/1.1 %s %s\r\n%s\r\n";
+    private static String HTTP_CONTINUE = "HTTP/1.1 100 Continue\r\n";
 
     private void writeHeaders(BufferedOutputStream bufferedOutputStream, int code) throws IOException {
         bufferedOutputStream.write(String.format(HTTP_HEADER, code, HttpStatus.valueOfCode(code).getDescription(), getHeaders()).getBytes());
+    }
+
+    public void writeContinue() {
+        Socket socket = relaxRequest.getSocket();
+        BufferedOutputStream bufferedOutputStream;
+
+        try {
+            bufferedOutputStream = new BufferedOutputStream(socket.getOutputStream());
+            bufferedOutputStream.write(HTTP_CONTINUE.getBytes());
+            log.info("Continue sent!");
+        } catch (IOException e) {
+            log.error("Failed to write continue.");
+        }
     }
 
 

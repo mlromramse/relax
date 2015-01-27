@@ -3,10 +3,7 @@ package se.romram.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.text.ParseException;
@@ -160,18 +157,26 @@ public class RelaxRequest {
     public StringBuffer getRequestBuffer() {
         if (requestBuffer == null) {
             try {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                InputStream inputStream = socket.getInputStream();
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
 
-				if (bufferedReader == null) {
+                //ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream();
+
+				if (inputStream == null) {
 					System.out.println("BREAK!");
 				}
 
                 requestBuffer = new StringBuffer();
-                for (String line; (line = bufferedReader.readLine())!=null && !line.isEmpty(); ) {
+                String line;
+                for (; (line = bufferedReader.readLine())!=null && !line.isEmpty(); ) {
                     requestBuffer.append(line);
                     requestBuffer.append("\n");
+                    log.debug(line);
                 }
+                log.debug(line);
                 requestBuffer.append("\n");
+
+                writeContinue();
 
                 contentLength = 0;
                 int b = requestBuffer.indexOf("Content-Length:", 0) + 15;
@@ -184,10 +189,20 @@ public class RelaxRequest {
                     }
                 }
 
+                log.debug("About to read {} bytes", contentLength);
+
                 if (contentLength > 0) {
                     payloadBuffer = new StringBuffer();
                     char[] buf = new char[contentLength];
-                    int r = bufferedReader.read(buf);
+                    char[] data = new char[200];
+                    int totRead = 0;
+                    int read = 1;
+                    while (read > 0 && totRead < contentLength) {
+                        read = bufferedReader.read(buf, totRead, contentLength - totRead);
+                        totRead = read > 0 ? totRead + read : totRead;
+                        log.debug("{} bytes of {} total was read.", totRead, contentLength);
+                        writeContinue();
+                    }
                     payloadBuffer.append(buf);
                     requestBuffer.append(payloadBuffer);
                 }
@@ -202,6 +217,18 @@ public class RelaxRequest {
         return requestBuffer;
     }
 
+    private void writeContinue() {
+        BufferedOutputStream bufferedOutputStream;
+
+        try {
+            bufferedOutputStream = new BufferedOutputStream(socket.getOutputStream());
+            bufferedOutputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
+            log.info("Continue sent!");
+        } catch (IOException e) {
+            log.error("Failed to write continue.");
+        }
+
+    }
 
 
 }

@@ -186,7 +186,7 @@ public class RelaxTest {
     @Test
 	@Ignore
 	public void startServer() throws IOException, InterruptedException {
-        org.apache.log4j.Logger.getRootLogger().setLevel(Level.ERROR);
+        org.apache.log4j.Logger.getRootLogger().setLevel(Level.DEBUG);
 		new RelaxServer(2357, new RelaxHandler() {
             @Override
             public boolean handle(RelaxRequest request, RelaxResponse response) {
