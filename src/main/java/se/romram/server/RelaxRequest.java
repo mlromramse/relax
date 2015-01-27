@@ -6,7 +6,9 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
+import java.net.URLDecoder;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -132,7 +134,12 @@ public class RelaxRequest {
     }
 
     private void parsePathQuery(String pathAndQuery) {
-        int qm = pathAndQuery.indexOf('?');
+		try {
+			pathAndQuery = URLDecoder.decode(pathAndQuery, relaxServer.charsetName);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		int qm = pathAndQuery.indexOf('?');
         if (qm==-1) {
             queryString = "";
             path = pathAndQuery;

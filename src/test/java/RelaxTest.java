@@ -41,7 +41,7 @@ public class RelaxTest {
 	@Rule
 	public TestRule testRule = new TestRule() {
 		@Override
-		public Statement apply(Statement base, Description description) {
+		public Statement apply(final Statement base, final Description description) {
 			return new Statement() {
 				@Override
 				public void evaluate() throws Throwable {
@@ -205,7 +205,7 @@ public class RelaxTest {
                 return true;
             }
         }, Executors.newFixedThreadPool(30)).start();
-		new RelaxServer(2358, new DefaultFileHandler("src/main/resources")).start();
+		new RelaxServer(2358, new DefaultFileHandler("src/test/resources")).start();
 		Thread.sleep(1000000);
 	}
 }

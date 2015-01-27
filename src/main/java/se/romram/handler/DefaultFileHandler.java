@@ -137,7 +137,7 @@ public class DefaultFileHandler implements RelaxHandler {
             StringBuffer buf = new StringBuffer();
             if (isHTMLAware) {
                 response.setContentType("text/html");
-                buf.append("<html><head></head><body><table>");
+                buf.append("<html><head><meta charset=\"utf-8\" /></head><body><table>");
             }
             for (File file : files) {
                 if (isHTMLAware) buf.append("<tr><td>");
