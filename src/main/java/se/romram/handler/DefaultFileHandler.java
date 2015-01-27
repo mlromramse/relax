@@ -13,6 +13,7 @@ import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -134,7 +135,8 @@ public class DefaultFileHandler implements RelaxHandler {
             return Files.readAllBytes(filePath);
         } else if (filePath.toFile().isDirectory()) {
             File[] files = filePath.toFile().listFiles();
-            StringBuffer buf = new StringBuffer();
+			Arrays.sort(files);
+			StringBuffer buf = new StringBuffer();
             if (isHTMLAware) {
                 response.setContentType("text/html");
                 buf.append("<html><head><meta charset=\"utf-8\" /></head><body><table>");
