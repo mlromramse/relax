@@ -6,10 +6,9 @@ import se.romram.helpers.HTTPDate;
 import se.romram.server.RelaxRequest;
 import se.romram.server.RelaxResponse;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.OutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -168,9 +167,10 @@ public class DefaultFileHandler implements RelaxHandler {
     private boolean put(Path filePath, RelaxRequest request, RelaxResponse response) {
         try {
             Files.createDirectories(filePath.getParent());
-            BufferedWriter writer = Files.newBufferedWriter(filePath, Charset.forName(request.getRelaxServer().charsetName));
-            writer.write(request.getPayload().toString());
-            writer.close();
+			OutputStream fileOutputStream = Files.newOutputStream(filePath);
+			fileOutputStream.write(request.getPayload());
+			fileOutputStream.flush();
+			fileOutputStream.close();
             response.respond(201, "File created!");
             return true;
         } catch (IOException e) {

@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.Socket;
 import java.net.URLDecoder;
-import java.text.ParseException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +22,7 @@ public class RelaxRequest {
     private RelaxServer relaxServer;
 
     private StringBuffer requestBuffer = null;
-    private StringBuffer payloadBuffer = null;
+    private byte[] payloadBuffer = null;
 
     private String method;
     private String pathAndQuery;
@@ -80,6 +80,7 @@ public class RelaxRequest {
     }
 
     public int getContentLength() {
+		parseRequest();
         return contentLength;
     }
 
@@ -146,7 +147,8 @@ public class RelaxRequest {
         }
     }
 
-    public StringBuffer getPayload() {
+    public byte[] getPayload() {
+		getRequestBuffer();
         return payloadBuffer;
     }
 
@@ -158,23 +160,17 @@ public class RelaxRequest {
         if (requestBuffer == null) {
             try {
                 InputStream inputStream = socket.getInputStream();
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+
+				if (inputStream == null) {
+					log.error("The inputStream is null!");
+				}
+
+				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+				BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
                 //ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream();
 
-				if (inputStream == null) {
-					System.out.println("BREAK!");
-				}
-
-                requestBuffer = new StringBuffer();
-                String line;
-                for (; (line = bufferedReader.readLine())!=null && !line.isEmpty(); ) {
-                    requestBuffer.append(line);
-                    requestBuffer.append("\n");
-                    log.debug(line);
-                }
-                log.debug(line);
-                requestBuffer.append("\n");
+				requestBuffer = getHeadersFromStream(bufferedInputStream);
 
                 writeContinue();
 
@@ -192,19 +188,8 @@ public class RelaxRequest {
                 log.debug("About to read {} bytes", contentLength);
 
                 if (contentLength > 0) {
-                    payloadBuffer = new StringBuffer();
-                    char[] buf = new char[contentLength];
-                    char[] data = new char[200];
-                    int totRead = 0;
-                    int read = 1;
-                    while (read > 0 && totRead < contentLength) {
-                        read = bufferedReader.read(buf, totRead, contentLength - totRead);
-                        totRead = read > 0 ? totRead + read : totRead;
-                        log.debug("{} bytes of {} total was read.", totRead, contentLength);
-                        writeContinue();
-                    }
-                    payloadBuffer.append(buf);
-                    requestBuffer.append(payloadBuffer);
+                    payloadBuffer = read(bufferedInputStream, contentLength);
+                    requestBuffer.append(new String(payloadBuffer, relaxServer.charsetName));
                 }
             } catch (IOException ex) {
                 log.error("An exception of type {} with message '{}' was encountered when reading the inputstream from socket [{}]."
@@ -217,13 +202,61 @@ public class RelaxRequest {
         return requestBuffer;
     }
 
-    private void writeContinue() {
+	private byte[] read(BufferedInputStream bufferedInputStream, int numChars) throws IOException {
+		byte[] buf = new byte[numChars];
+		int totRead = 0;
+		int read = 1;
+		while (read > 0 && totRead < numChars) {
+			read = bufferedInputStream.read(buf, totRead, numChars - totRead);
+			totRead = read > 0 ? totRead + read : totRead;
+			log.debug("{} bytes of {} total was read.", totRead, numChars);
+			writeContinue();
+		}
+		return buf;
+	}
+
+	private StringBuffer getHeadersFromStream(BufferedInputStream bufferedInputStream) throws IOException {
+		StringBuffer result = new StringBuffer();
+
+		String line;
+		while (!(line = readLine(bufferedInputStream)).isEmpty()) {
+			result.append(line);
+			result.append("\n");
+		}
+		result.append("\n");
+
+		return result;
+	}
+
+	private String readLine(BufferedInputStream bufferedInputStream) throws IOException {
+		ByteBuffer byteBuffer = ByteBuffer.allocate(8000);
+
+		boolean done = false;
+		byte[] byteArray = new byte[1];
+		while (!done && bufferedInputStream.read(byteArray) > 0) {
+			if (byteArray[0] == '\n') {
+				break;
+			}
+			if (byteArray[0] != '\r') {
+				byteBuffer.put(byteArray[0]);
+			}
+		}
+		int pos = byteBuffer.position();
+		byte[] tmp = new byte[pos];
+		byteBuffer.position(0);
+		byteBuffer.get(tmp, 0, pos);
+		byteBuffer.position(pos);
+		String result = new String(tmp, "utf8");
+		return result;
+	}
+
+	private void writeContinue() {
         BufferedOutputStream bufferedOutputStream;
 
         try {
             bufferedOutputStream = new BufferedOutputStream(socket.getOutputStream());
             bufferedOutputStream.write("HTTP/1.1 100 Continue\r\n\r\n".getBytes());
-            log.info("Continue sent!");
+            log.debug("Continue sent!");
         } catch (IOException e) {
             log.error("Failed to write continue.");
         }
