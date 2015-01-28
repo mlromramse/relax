@@ -138,7 +138,9 @@ public class RelaxTest {
                 return true;
             }
         });
-		server.addHeaders("Server: MyRelaxingServer", "Content-Type: text/html")
+		server
+                .addHeaders("Server: MyRelaxingServer")
+                .setContentType("text/html")
 				.start();
 
 		RelaxClient relaxClient = new RelaxClient();
@@ -166,7 +168,10 @@ public class RelaxTest {
                 return true;
             }
         });
-        server.addHeaders("Server: MyRelaxingServer", "Content-Type: text/html").start();
+        server
+                .addHeaders("Server: MyRelaxingServer")
+                .setContentType("text/html")
+                .start();
 
         RelaxClient relaxClient = new RelaxClient();
         relaxClient.addRequestHeaders(DEFAULT_HEADERS)
