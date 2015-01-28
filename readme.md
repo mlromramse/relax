@@ -37,6 +37,7 @@ There is also possible to change the port and/or path to another directory by ad
 * port=1234
 * path=/absolute/or/relative/path/to/a/directory
 
+
     java -jar relax-n-n-jar-with-dependencies.jar port=1234 path=/absolute/or/relative/path/to/a/directory
 
 Now you can browse to http://localhost:1234 in your favorite browser and see the files in the pointed out directory.
