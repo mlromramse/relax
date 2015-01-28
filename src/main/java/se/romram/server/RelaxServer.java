@@ -43,7 +43,39 @@ public class RelaxServer extends Thread {
         this.executor = executor;
     }
 
-	public void run() {
+    public RelaxServer setExecutor(Executor executor) {
+        this.executor = executor;
+        return this;
+    }
+
+    public RelaxServer addHeaders(String... headerArr) {
+        for (String header : headerArr) {
+            getHeaderList().add(header);
+        }
+        return this;
+    }
+
+    public List<String> getHeaderList() {
+        return headerList;
+    }
+
+    public RelaxServer addRelaxHandler(RelaxHandler handler) {
+        if (handler != null) {
+            relaxHandlerList.add(handler);
+        }
+        return this;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public RelaxServer setContentType(String contentType) {
+        this.contentType = contentType;
+        return this;
+    }
+
+    public void run() {
 		active = true;
 		log.info("The server is active and monitors port {}", port);
 		while (active) {
@@ -144,32 +176,6 @@ public class RelaxServer extends Thread {
     public void end() {
 		active = false;
 	}
-
-    public RelaxServer addHeaders(String... headerArr) {
-        for (String header : headerArr) {
-            getHeaderList().add(header);
-        }
-        return this;
-    }
-
-    public List<String> getHeaderList() {
-        return headerList;
-    }
-
-    public RelaxServer addRelaxHandler(RelaxHandler handler) {
-        if (handler != null) {
-            relaxHandlerList.add(handler);
-        }
-		return this;
-	}
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
 
 
 }
