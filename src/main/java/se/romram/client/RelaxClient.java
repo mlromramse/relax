@@ -1,5 +1,6 @@
 package se.romram.client;
 
+import org.ow2.util.base64.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.romram.cookie.RelaxCookie;
@@ -11,7 +12,11 @@ import se.romram.exceptions.UncheckedMalformedURLException;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 /**
  * Created by micke on 2014-12-02.
@@ -306,7 +311,7 @@ public class RelaxClient {
     private void authorize(URLConnection urlConnection) {
         if (url.getUserInfo() != null) {
             String basicAuth = "Basic "
-                    + new String(Base64.getEncoder().encode(url.getUserInfo().getBytes()));
+                    + new String(Base64.encode(url.getUserInfo().getBytes()));
             urlConnection.setRequestProperty("Authorization", basicAuth);
         }
     }
