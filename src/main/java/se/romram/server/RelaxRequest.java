@@ -172,7 +172,9 @@ public class RelaxRequest {
 
 				requestBuffer = getHeadersFromStream(bufferedInputStream);
 
-                writeContinue();
+				boolean doWriteContinue = requestBuffer.indexOf("Expect:")!=-1 && requestBuffer.indexOf("100-continue")!=-1;
+
+				if (doWriteContinue) writeContinue();
 
                 contentLength = 0;
                 int b = requestBuffer.indexOf("Content-Length:", 0) + 15;
@@ -210,7 +212,6 @@ public class RelaxRequest {
 			read = bufferedInputStream.read(buf, totRead, numChars - totRead);
 			totRead = read > 0 ? totRead + read : totRead;
 			log.debug("{} bytes of {} total was read.", totRead, numChars);
-			writeContinue();
 		}
 		return buf;
 	}
