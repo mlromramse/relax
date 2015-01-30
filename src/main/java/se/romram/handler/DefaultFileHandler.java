@@ -33,24 +33,51 @@ public class DefaultFileHandler implements RelaxHandler {
 	public DefaultFileHandler(String pathAsString) {
         path = FileSystems.getDefault().getPath(pathAsString);
         this.pathAsString = pathAsString;
+		addExtensionContentType("class", "application/java");
+		addExtensionContentType("doc", "application/msword");
 		addExtensionContentType("js", "application/javascript");
 		addExtensionContentType("json", "application/json");
 		addExtensionContentType("pdf", "application/pdf");
+		addExtensionContentType("pps", "application/vnd.ms-powerpoint");
+		addExtensionContentType("ppt", "application/vnd.ms-powerpoint");
+		addExtensionContentType("ps", "application/postscript");
+		addExtensionContentType("rtf", "application/rtf");
+		addExtensionContentType("swf", "application/x-shockwave-flash");
+		addExtensionContentType("word", "application/msword");
 		addExtensionContentType("xml", "application/xml");
+		addExtensionContentType("xls", "application/vnd.ms-excel");
+		addExtensionContentType("zip", "application/zip");
 		addExtensionContentType("png", "image/png");
 		addExtensionContentType("jpg", "image/jpeg");
 		addExtensionContentType("jpeg", "image/jpeg");
 		addExtensionContentType("ico", "image/x-icon");
 		addExtensionContentType("gif", "image/gif");
 		addExtensionContentType("svg", "image/svg+xml");
+		addExtensionContentType("tif", "image/tiff");
+		addExtensionContentType("tiff", "image/tiff");
+		addExtensionContentType("xcf", "image/xcf");
+		addExtensionContentType("xpm", "image/xpm");
 		addExtensionContentType("css", "text/css");
 		addExtensionContentType("csv", "text/csv");
 		addExtensionContentType("htm", "text/html");
 		addExtensionContentType("html", "text/html");
 		addExtensionContentType("txt", "text/plain");
 		addExtensionContentType("text", "text/plain");
+		addExtensionContentType("rt", "text/richtext");
 		addExtensionContentType("rtf", "text/rtf");
+		addExtensionContentType("xsl", "text/xml");
+		addExtensionContentType("xslt", "text/xml");
 		addExtensionContentType("md", "text/x-markdown");
+		addExtensionContentType("avi", "video/avi");
+		addExtensionContentType("mov", "video/quicktime");
+		addExtensionContentType("mp3", "audio/mpeg3");
+		addExtensionContentType("mp4", "video/mp4");
+		addExtensionContentType("mpe", "video/mpeg");
+		addExtensionContentType("mpeg", "video/mpeg");
+		addExtensionContentType("mpg", "video/mpeg");
+		addExtensionContentType("mpga", "audio/mpeg");
+		addExtensionContentType("wav", "audio/wav");
+		addExtensionContentType("qt", "video/quicktime");
     }
 
 	public DefaultFileHandler addExtensionContentType(String extension, String contentType) {
