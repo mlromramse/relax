@@ -37,6 +37,7 @@ public class DefaultFileHandler implements RelaxHandler {
 		addExtensionContentType("doc", "application/msword");
 		addExtensionContentType("js", "application/javascript");
 		addExtensionContentType("json", "application/json");
+		addExtensionContentType("m3u8", "application/x-mpegURL");
 		addExtensionContentType("pdf", "application/pdf");
 		addExtensionContentType("pps", "application/vnd.ms-powerpoint");
 		addExtensionContentType("ppt", "application/vnd.ms-powerpoint");
@@ -68,7 +69,8 @@ public class DefaultFileHandler implements RelaxHandler {
 		addExtensionContentType("xsl", "text/xml");
 		addExtensionContentType("xslt", "text/xml");
 		addExtensionContentType("md", "text/x-markdown");
-		addExtensionContentType("avi", "video/avi");
+		addExtensionContentType("avi", "video/x-msvideo");
+		addExtensionContentType("flv", "video/x-flv");
 		addExtensionContentType("mov", "video/quicktime");
 		addExtensionContentType("mp3", "audio/mpeg3");
 		addExtensionContentType("mp4", "video/mp4");
@@ -77,6 +79,7 @@ public class DefaultFileHandler implements RelaxHandler {
 		addExtensionContentType("mpg", "video/mpeg");
 		addExtensionContentType("mpga", "audio/mpeg");
 		addExtensionContentType("wav", "audio/wav");
+		addExtensionContentType("wmv", "audio/x-ms-wmv");
 		addExtensionContentType("qt", "video/quicktime");
     }
 
