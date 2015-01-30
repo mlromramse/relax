@@ -44,15 +44,16 @@ When built with maven using the assembly plugin the jar is a runnable server in 
 
     java -jar relax-n-n-jar-with-dependencies.jar
 
-In this fashion it will serve your files in the current directory on localhost:8080. 
+In this fashion it will serve your files in the current directory on localhost:8080 with 10 threads in the pool. 
 There is also possible to change the port and/or path to another directory by adding one or both of the parameters:
 
 * port=1234
 * path=/absolute/or/relative/path/to/a/directory
+* threads=20
 
 ##### Use the parameters like this:
 
-    java -jar relax-n-n-jar-with-dependencies.jar port=1234 path=/absolute/or/relative/path/to/a/directory
+    java -jar relax-n-n-jar-with-dependencies.jar port=1234 path=/absolute/or/relative/path/to/a/directory threads=20
 
 Now you can browse to http://localhost:1234 in your favorite browser and see the files in the pointed out directory.
 

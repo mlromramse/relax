@@ -8,18 +8,22 @@ import se.romram.handler.RelaxHandler;
  */
 public class Properties {
     int port = 8080;
+	int threads = 10;
     String path = ".";
     RelaxHandler handler;
 
     public Properties(String[] args) {
         for (int i=0; i<args.length; i++) {
             String arg = args[i];
+			if (arg.toLowerCase().startsWith("path=")) {
+				path = getValue(arg);
+			}
             if (arg.toLowerCase().startsWith("port=")) {
                 port = getIntValue(arg);
             }
-            if (arg.toLowerCase().startsWith("path=")) {
-                path = getValue(arg);
-            }
+			if (arg.toLowerCase().startsWith("threads=")) {
+				threads = getIntValue(arg);
+			}
         }
         handler = new DefaultFileHandler(path);
     }
