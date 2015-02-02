@@ -203,8 +203,8 @@ public class RelaxServer extends Thread {
                         String value = valueArr[i];
 						int multiple = value.contains("m") ? 1000000 : processDataNames[i].contains("%") ? 1 : 1000;
 						multiple = value.contains("g") ? 1000000000 : multiple;
-						multiple = value.contains(".") ? multiple / 10 : multiple;
-						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple;
+						int divisor = value.contains(".") ? 10 : 1;
+						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
                         buf.append(String.format(",\n\"%s\": %s", processDataNames[i], intValue));
                     }
                 }
