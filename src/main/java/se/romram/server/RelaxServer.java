@@ -20,8 +20,8 @@ import java.util.concurrent.Executors;
  * Created by micke on 2014-12-02.
  */
 public class RelaxServer extends Thread {
-    private static final String UNIX_GET_PROCESS_DATA_ONELINER = "sh -c 'top -bp%1$s -n1|grep %1$s|tr -s \" \"|cut -d \" \" -f 1- --output-delimiter \",\"'";
-    private String[] processDataNames = {"", "owner", "", "", "", "res", "shared mem", "", "cpu%", "mem%", "cputime"};
+    private static final String UNIX_GET_PROCESS_DATA_ONELINER = "top -bp%1$s -n1|grep %1$s|tr -s \" \"|cut -d \" \" -f 1- --output-delimiter \",\"";
+    private String[] processDataNames = {"", "", "", "", "", "residentMem", "sharedMem", "", "cpu%", "mem%", ""};
     private static Logger log = LoggerFactory.getLogger(RelaxServer.class);
 	private boolean active = false;
 	private int port;
@@ -186,8 +186,9 @@ public class RelaxServer extends Thread {
         if (osName.toLowerCase().contains("nux")) {
             try {
                 String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
-                log.debug("Executing: {}", command);
-                Process process = Runtime.getRuntime().exec(command);
+				String[] script = {"/bin/sh", "-c", command};
+                log.debug("Executing: {}", script);
+                Process process = Runtime.getRuntime().exec(script);
                 process.waitFor();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String resultLine = "";
@@ -198,9 +199,13 @@ public class RelaxServer extends Thread {
                 log.debug("Result: {}", resultLine);
                 String[] valueArr = resultLine.split(",");
                 for (int i=0; i<valueArr.length; i++) {
-                    if (!processDataNames[i].isEmpty()) {
+                    if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
                         String value = valueArr[i];
-                        buf.append(addServerValue(processDataNames[i], value));
+						int multiple = value.contains("m") ? 1000000 : processDataNames[i].contains("%") ? 1 : 1000;
+						multiple = value.contains("g") ? 1000000000 : multiple;
+						multiple = value.contains(".") ? multiple / 10 : multiple;
+						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple;
+                        buf.append(String.format(",\n\"%s\": %s", processDataNames[i], intValue));
                     }
                 }
             } catch (IOException e) {
