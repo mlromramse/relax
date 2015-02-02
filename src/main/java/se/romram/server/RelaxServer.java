@@ -4,14 +4,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.romram.handler.RelaxHandler;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -19,7 +20,9 @@ import java.util.concurrent.Executors;
  * Created by micke on 2014-12-02.
  */
 public class RelaxServer extends Thread {
-	private static Logger log = LoggerFactory.getLogger(RelaxServer.class);
+    private static final String UNIX_GET_PROCESS_DATA_ONELINER = "sh -c 'top -bp%1$s -n1|grep %1$s|tr -s \" \"|cut -d \" \" -f 1- --output-delimiter \",\"'";
+    private String[] processDataNames = {"", "owner", "", "", "", "res", "shared mem", "", "cpu%", "mem%", "cputime"};
+    private static Logger log = LoggerFactory.getLogger(RelaxServer.class);
 	private boolean active = false;
 	private int port;
 	protected List<RelaxHandler> relaxHandlerList = Collections.synchronizedList(new ArrayList<RelaxHandler>());
@@ -31,6 +34,7 @@ public class RelaxServer extends Thread {
     private long requestCount = 0;
     private List<String> headerList = Collections.synchronizedList(new ArrayList<String>());
     private String contentType = "text/plain; charset=utf8";
+    private long pid = -1;
 
 	public RelaxServer(int port, RelaxHandler handler) throws IOException {
 		this.port = port;
@@ -121,27 +125,28 @@ public class RelaxServer extends Thread {
     }
 
     public synchronized long getProcessId() {
-        int pid = 0;
-        try {
-            java.lang.management.RuntimeMXBean runtime =
-                    java.lang.management.ManagementFactory.getRuntimeMXBean();
-            java.lang.reflect.Field jvm = null;
-            jvm = runtime.getClass().getDeclaredField("jvm");
-            jvm.setAccessible(true);
-            sun.management.VMManagement mgmt =
-                    (sun.management.VMManagement) jvm.get(runtime);
-            java.lang.reflect.Method pid_method =
-                    mgmt.getClass().getDeclaredMethod("getProcessId");
-            pid_method.setAccessible(true);
-            pid = (Integer) pid_method.invoke(mgmt);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
+        if (pid == -1) {
+            try {
+                java.lang.management.RuntimeMXBean runtime =
+                        java.lang.management.ManagementFactory.getRuntimeMXBean();
+                java.lang.reflect.Field jvm = null;
+                jvm = runtime.getClass().getDeclaredField("jvm");
+                jvm.setAccessible(true);
+                sun.management.VMManagement mgmt =
+                        (sun.management.VMManagement) jvm.get(runtime);
+                java.lang.reflect.Method pid_method =
+                        mgmt.getClass().getDeclaredMethod("getProcessId");
+                pid_method.setAccessible(true);
+                pid = (Integer) pid_method.invoke(mgmt);
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
         }
         return pid;
     }
@@ -152,8 +157,58 @@ public class RelaxServer extends Thread {
         buf.append(addServerValue("pid", getProcessId()));
         buf.append(addServerValue("activeThreads", getActiveThreadsCount()));
         buf.append(addServerValue("requestCount", getRequestCount()));
+        osStats(buf);
+        javaStats(buf);
         buf.append("\n}");
         return buf.toString();
+    }
+
+    private void javaStats(StringBuffer buf) {
+        String javaName = System.getProperty("java.vm.name");
+        String javaVendor = System.getProperty("java.vendor");
+        String javaVersion = System.getProperty("java.version");
+        buf.append(",\n\"java\": {\n");
+        buf.append(serverValue("name", javaName));
+        buf.append(addServerValue("arch", javaVendor));
+        buf.append(addServerValue("version", javaVersion));
+        buf.append("\n}\n");
+    }
+
+    private void osStats(StringBuffer buf) {
+        String osName = System.getProperty("os.name");
+        String osArch = System.getProperty("os.arch");
+        String osVersion = System.getProperty("os.version");
+        buf.append(",\n\"os\": {\n");
+        buf.append(serverValue("name", osName));
+        buf.append(addServerValue("arch", osArch));
+        buf.append(addServerValue("version", osVersion));
+        buf.append("\n}\n");
+        if (osName.toLowerCase().contains("nux")) {
+            try {
+                String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
+                log.debug("Executing: {}", command);
+                Process process = Runtime.getRuntime().exec(command);
+                process.waitFor();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String resultLine = "";
+                String line = "";
+                while ((line = reader.readLine()) != null) {
+                    resultLine += line;
+                }
+                log.debug("Result: {}", resultLine);
+                String[] valueArr = resultLine.split(",");
+                for (int i=0; i<valueArr.length; i++) {
+                    if (!processDataNames[i].isEmpty()) {
+                        String value = valueArr[i];
+                        buf.append(addServerValue(processDataNames[i], value));
+                    }
+                }
+            } catch (IOException e) {
+                // ignore
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
     }
 
     private String addServerValue(String key, Object value) {
@@ -161,7 +216,7 @@ public class RelaxServer extends Thread {
     }
 
     private String serverValue(String key, Object value) {
-        return String.format("\"%s\": \"%s\"", key, value.toString());
+        return String.format("\"%s\": \"%s\"", key, value != null ? value.toString() : "null");
     }
 
 

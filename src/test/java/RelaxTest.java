@@ -67,10 +67,9 @@ public class RelaxTest {
 	@Test
 	public void testGetOneLinerWithExceptions() {
 		try {
-			log.debug("Response: {}", new RelaxClient().throwExceptions().get(baseUrl + "/404?key=value1&key=value2"));
+			new RelaxClient().throwExceptions().get(baseUrl + "/404?key=value1&key=value2");
 			fail("You should not get here since an exception is expected.");
 		} catch (Exception e) {
-			log.debug("An expected exception '{}' was thrown with message '{}'.", e.getClass().getSimpleName(), e.getMessage());
 		}
 	}
 
@@ -83,6 +82,16 @@ public class RelaxTest {
 			fail("Should not be found!");
 		}
 	}
+
+    @Test
+    public void testGetServerStats() {
+        RelaxClient relaxClient = new RelaxClient();
+        relaxClient.get(baseUrl + "/serverstats");
+        if (relaxClient.getStatus().isOK()) {
+            log.debug(relaxClient.toString());
+            assertThat(relaxClient.toString(), containsString("os"));
+        }
+    }
 
     @Test
     public void testPost() throws InterruptedException {
