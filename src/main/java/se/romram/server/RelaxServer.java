@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
  * Created by micke on 2014-12-02.
  */
 public class RelaxServer extends Thread {
-    private static final String UNIX_GET_PROCESS_DATA_ONELINER = "top -bp%1$s -n1|grep %1$s|tr -s \" \"|cut -d \" \" -f 1- --output-delimiter \",\"";
+    private static final String UNIX_GET_PROCESS_DATA_ONELINER = "top -bp%1$s -n1|grep %1$s|tr -s \" \"|sed \"s/^ *//\"|cut -d \" \" -f 1- --output-delimiter \",\"";
     private String[] processDataNames = {"", "", "", "", "", "residentMem", "sharedMem", "", "cpu%", "mem%", ""};
     private static Logger log = LoggerFactory.getLogger(RelaxServer.class);
 	private boolean active = false;
