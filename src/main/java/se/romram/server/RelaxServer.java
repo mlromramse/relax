@@ -188,8 +188,11 @@ public class RelaxServer extends Thread {
                 String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
 				String[] script = {"/bin/sh", "-c", command};
                 log.debug("Executing: {}", script);
+				long peekTime = System.currentTimeMillis();
                 Process process = Runtime.getRuntime().exec(script);
                 process.waitFor();
+				peekTime = System.currentTimeMillis()-peekTime;
+				buf.append(addServerValue("peekTime", peekTime));
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String resultLine = "";
                 String line = "";
@@ -205,13 +208,14 @@ public class RelaxServer extends Thread {
 						multiple = value.contains("g") ? 1000000000 : multiple;
 						int divisor = value.contains(".") ? 10 : 1;
 						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
-                        buf.append(String.format(",\n\"%s\": %s", processDataNames[i], intValue));
+//                        buf.append(String.format(",\n\"%s\": %s", processDataNames[i], intValue));
+						buf.append(addServerValue(processDataNames[i], intValue));
                     }
                 }
             } catch (IOException e) {
-                // ignore
+                // ignore for fail safe purpose
             } catch (InterruptedException e) {
-                // ignore
+				// ignore for fail safe purpose
             }
         }
     }
@@ -221,6 +225,9 @@ public class RelaxServer extends Thread {
     }
 
     private String serverValue(String key, Object value) {
+		if (value instanceof Integer) {
+			return String.format("\"%s\": %s", key, value != null ? value : "null");
+		}
         return String.format("\"%s\": \"%s\"", key, value != null ? value.toString() : "null");
     }
 
