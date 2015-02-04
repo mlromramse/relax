@@ -199,7 +199,7 @@ public class RelaxServer extends Thread {
                 while ((line = reader.readLine()) != null) {
                     resultLine += line;
                 }
-                log.debug("Result: {}", resultLine);
+				System.out.printf("Result: %s", resultLine);
                 String[] valueArr = resultLine.split(",");
                 for (int i=0; i<valueArr.length; i++) {
                     if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
