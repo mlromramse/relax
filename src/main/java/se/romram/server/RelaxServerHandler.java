@@ -12,7 +12,7 @@ public class RelaxServerHandler extends AbstractHandler {
     @Override
     public boolean handle(RelaxRequest relaxRequest, RelaxResponse relaxResponse) {
         if (!relaxRequest.getSocket().isClosed()) {
-            log.debug("A {} request for resource {} with queryParameters '{}' has been received by {} from user agent '{}'."
+            log.info("A {} request for resource {} with queryParameters '{}' has been received by {} from user agent '{}'."
                     , relaxRequest.getMethod()
                     , relaxRequest.getRequestURL()
                     , relaxRequest.getQueryString()

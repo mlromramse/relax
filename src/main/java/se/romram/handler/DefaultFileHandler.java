@@ -93,11 +93,11 @@ public class DefaultFileHandler implements RelaxHandler {
 
     @Override
     public boolean handle(RelaxRequest request, RelaxResponse response) {
-        log.debug("A {} request for resource {} with queryParameters '{}' has been received from user agent '{}'."
-                , request.getMethod()
-                , request.getRequestURL()
-                , request.getQueryString()
-                , request.getUserAgent());
+        log.info("A {} request for resource {} with queryParameters '{}' has been received from user agent '{}'."
+				, request.getMethod()
+				, request.getRequestURL()
+				, request.getQueryString()
+				, request.getUserAgent());
 		if (request.getMethod() == null) {
 			log.warn("Empty request '{}'", request.getRequestBuffer());
 		}
@@ -153,6 +153,7 @@ public class DefaultFileHandler implements RelaxHandler {
             return true;
         } catch (IOException e) {
             response.respond(404, "");
+			log.warn("File {} not found.", filePath);
             return true;
         }
 
@@ -161,6 +162,7 @@ public class DefaultFileHandler implements RelaxHandler {
     private byte[] getPayload(Path filePath, RelaxRequest request, RelaxResponse response) throws IOException {
         boolean isHTMLAware = request.getAccept().toLowerCase().contains("text/html");
         if (filePath.toFile().isFile()) {
+			if (filePath.toFile().isHidden()) throw new IOException("File not found.");
             return Files.readAllBytes(filePath);
         } else if (filePath.toFile().isDirectory()) {
             File[] files = filePath.toFile().listFiles();
@@ -171,20 +173,24 @@ public class DefaultFileHandler implements RelaxHandler {
                 buf.append("<html><head><meta charset=\"utf-8\" /></head><body><table>");
             }
             for (File file : files) {
-                if (isHTMLAware) buf.append("<tr><td>");
-                buf.append(new Date(file.lastModified()));
-                if (isHTMLAware) buf.append("</td><td>"); else buf.append(" ");
-                buf.append(String.format("%10d", file.length()));
-                if (isHTMLAware) {
-                    String path = request.getPath();
-                    if (path.charAt(path.length()-1) != '/') path += "/";
-                    buf.append("</td><td><a href=\"" + path + file.getName() + "\">");
-                } else {
-                    buf.append(" ");
-                }
-                buf.append(file.getName());
-                if (file.isDirectory()) buf.append("/");
-                if (isHTMLAware) buf.append("</a></td></tr>"); else buf.append("\n");
+				if (!file.isHidden()) {
+					if (isHTMLAware) buf.append("<tr><td>");
+					buf.append(new Date(file.lastModified()));
+					if (isHTMLAware) buf.append("</td><td style=\"text-align:right\">");
+					else buf.append(" ");
+					buf.append(String.format("%10d", file.length()));
+					if (isHTMLAware) {
+						String path = request.getPath();
+						if (path.charAt(path.length() - 1) != '/') path += "/";
+						buf.append("</td><td><a href=\"" + path + file.getName() + "\">");
+					} else {
+						buf.append(" ");
+					}
+					buf.append(file.getName());
+					if (file.isDirectory()) buf.append("/");
+					if (isHTMLAware) buf.append("</a></td></tr>");
+					else buf.append("\n");
+				}
             }
             if (isHTMLAware) {
                 buf.append("</table></body></html>");
