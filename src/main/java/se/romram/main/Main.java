@@ -1,12 +1,8 @@
 package se.romram.main;
 
-import se.romram.handler.DefaultFileHandler;
-import se.romram.handler.RelaxHandler;
 import se.romram.server.RelaxServer;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 
 /**
