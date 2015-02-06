@@ -38,11 +38,13 @@ When built with maven using the assembly plugin the jar is a runnable server in 
 
 ##### Build like this:
 
-    mvn clean compile assembly:single
+    mvn clean package shade:shade
+
+You will find the compiled artifact in the `target` directory.
 
 ##### Run it like this
 
-    java -jar relax-n-n-jar-with-dependencies.jar
+    java -jar relax-n-n-n.jar
 
 In this fashion it will serve your files in the current directory on localhost:8080 with 10 threads in the pool. 
 There is also possible to change the port and/or path to another directory by adding one or both of the parameters:
@@ -53,7 +55,7 @@ There is also possible to change the port and/or path to another directory by ad
 
 ##### Use the parameters like this:
 
-    java -jar relax-n-n-jar-with-dependencies.jar port=1234 path=/absolute/or/relative/path/to/a/directory threads=20
+    java -jar relax-n-n-n.jar port=1234 path=/absolute/or/relative/path/to/a/directory threads=20
 
 Now you can browse to http://localhost:1234 in your favorite browser and see the files in the pointed out directory.
 
@@ -64,12 +66,43 @@ By putting you can add files:
 _Any file works, binary as well as text. 
 Please note that using ports below 1024 will need root privileges on a unix environment._
 
+##### Activate or deactivate logging
+
+The runnable jar is using the SimpleLogger from log4j and that logs any INFO logs by default.
+This can be adjusted by the standard Java VM argument for the SimpleLogger which is 
+`-Dorg.slf4j.simpleLogger.defaultLogLevel=WANTED_LEVEL` where the WANTED_LEVEL can be any of these:
+error, warn, info, debug or trace.
+
+This will make the server quite quiet:
+
+	java -Dorg.slf4j.simpleLogger.defaultLogLevel=error -jar relax-n-n-n.jar
+
+If you want the info logs but directed into a file you do:
+
+	java -jar relax-n-n-n.jar 2> filename.log
+
+
+
+### Import RelaxServer into your project using maven
+
+Build the project with maven like this:
+
+	mvn clean install
+	
+Include it using dependency statement in your pom.ml like this:
+
+	<dependency>
+		<groupId>se.romram</groupId>
+		<artifactId>relax</artifactId>
+		<version>n.n.n</version>
+    </dependency>
 
 
 
 ### Implement a handler of your own
 
-By including the relax jar in your own project you can build a Hello World HTTP server as easy as this:
+By including the relax jar in your own project, see above, 
+you can build a Hello World HTTP server as easy as this:
 
     RelaxServer server = new RelaxServer(8080, new RelaxHandler() {
         public boolean handle(RelaxRequest request, RelaxResponse response) {
@@ -91,7 +124,7 @@ the methods can be placed in a chain:
 
     RelaxServer server = new RelaxServer(8080, new RelaxHandler() {
         public boolean handle(RelaxRequest request, RelaxResponse response) {
-            response.respond(200, "<h1>Hello World!</h1>");
+            response.respond(200, "<html><body><h1>Hello World!</h1></body></html>");
             return true;
         }
     });
@@ -103,11 +136,58 @@ the methods can be placed in a chain:
 
 _We have added a different thread pool than the default which is fixed at 10 threads in the pool._
 
-_One header has been added. Several headers can be added in the same method._
+_One header has been added. Several headers can be added in the same method. 
+Just separate them with a comma._
 
-_The content type is also set to text/html this time instead of the default text/plain._
+_The content type is also set to text/html this time instead of the default text/plain, 
+since we return HTML tag this time._
 
 
+
+### RelaxServer's built in handlers
+
+To be usable as a stand alone web server the RelaxServer has two built in handlers.
+
+The most usable is the DefaultFileHandler that is responsible for returning files from 
+your filesystem as requested. 
+If nothing is requested or if you select a directory a file listing is returned.
+If the user agent tells the server that it can handle HTML that is returned with working links
+otherwise the listing is returned as plain text.
+_Hidden files are not returned._
+
+Go to this url `http://localhost:8080` with both your favourite web browser and cUrl to see 
+the difference. 
+
+The other built in handler manages a few tasks that can come in handy.
+First you can ask for `serverstats` which returns some statistics of the server.
+It is returned as json and can look like this:
+
+	{
+		server: "RelaxServer",
+		pid: "29807",
+		activeThreads: 1,
+		requestCount: "8",
+		os: {
+			name: "Linux",
+			arch: "amd64",
+			version: "3.8.0-34-generic"
+		},
+		peekTime: "507",
+		residentMem: 28000000,
+		sharedMem: 11000000,
+		cpu%: 0,
+		mem%: 0,
+		java: {
+			name: "Java HotSpot(TM) 64-Bit Server VM",
+			arch: "Oracle Corporation",
+			version: "1.8.0_31"
+		}
+	}
+
+_Some of these data items is collected from the underlying OS and most is returned on a Linux platform._
+
+_Always returned are everything except peekTime, residentMem, sharedMem, cpu% and mem%. 
+The cpu% item tells the cpu utilization of this process only as do the other values._
 
 
 ## The RelaxClient
