@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 public class RelaxServer extends Thread {
     private static final String UNIX_GET_PROCESS_DATA_ONELINER = "top -bp%1$s -n1|grep %1$s|tr -s \" \"|sed \"s/^ *//\"|cut -d \" \" -f 1- --output-delimiter \",\"";
     private String[] processDataNames = {"", "", "", "", "", "residentMem", "sharedMem", "", "cpu%", "mem%", ""};
-    private static Logger log = LoggerFactory.getLogger(RelaxServer.class);
+    private Logger log = LoggerFactory.getLogger(RelaxServer.class);
 	private boolean active = false;
 	private int port;
 	protected List<RelaxHandler> relaxHandlerList = Collections.synchronizedList(new ArrayList<RelaxHandler>());
@@ -82,6 +82,7 @@ public class RelaxServer extends Thread {
     public void run() {
 		active = true;
 		log.info("The server is active and monitors port {}", port);
+		log.debug(" * using handler {}.", relaxHandlerList.get(0).getClass().getSimpleName());
 		while (active) {
 			try {
 //				log.debug("Waiting for request!");
@@ -199,7 +200,7 @@ public class RelaxServer extends Thread {
                 while ((line = reader.readLine()) != null) {
                     resultLine += line;
                 }
-				System.out.printf("Result: %s", resultLine);
+				log.debug("Result: %s", resultLine);
                 String[] valueArr = resultLine.split(",");
                 for (int i=0; i<valueArr.length; i++) {
                     if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
