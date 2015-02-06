@@ -6,7 +6,7 @@
 
     <groupId>se.romram</groupId>
     <artifactId>relax</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -31,6 +31,11 @@
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.5</version>
             <scope>test</scope>
@@ -49,18 +54,53 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
+                    <!--excludes>
+                        <exclude>**/log4j.properties</exclude>
+                    </excludes-->
                     <archive>
                         <manifest>
+                            <addClasspath>true</addClasspath>
                             <mainClass>se.romram.main.Main</mainClass>
+                            <!--classpathPrefix>dependency-jars/</classpathPrefix-->
                         </manifest>
                     </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.5.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <!-- exclude junit, we need runtime dependency only -->
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${project.build.directory}/dependency-jars/</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!--plugin>
+               <artifactId>maven-assembly-plugin</artifactId>
+               <configuration>
+                   <archive>
+                       <manifest>
+                           <mainClass>se.romram.main.Main</mainClass>
+                       </manifest>
+                   </archive>
+                   <descriptorRefs>
+                       <descriptorRef>runnable</descriptorRef>
+                   </descriptorRefs>
+               </configuration>
+           </plugin-->
         </plugins>
     </build>
 
