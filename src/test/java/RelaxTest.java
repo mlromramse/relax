@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
  * Created by micke on 2014-11-28.
  */
 public class RelaxTest {
-	private static Logger log = LoggerFactory.getLogger(RelaxTest.class);
+	private Logger log = LoggerFactory.getLogger(RelaxTest.class);
 	private static String[] DEFAULT_HEADERS = {"UserAgent:Relax"};
     private static int port = 2356;
     private static String domain = "localhost";

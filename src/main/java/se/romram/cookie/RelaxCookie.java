@@ -19,7 +19,7 @@ import java.util.TimeZone;
  */
 public class RelaxCookie {
 
-    private static final Logger log = LoggerFactory.getLogger(RelaxCookie.class);
+    private Logger log = LoggerFactory.getLogger(RelaxCookie.class);
     private static final int FIRST = 0;
     private static final String EXPIRES = "Expires";
     private static final String DOMAIN = "Domain";
