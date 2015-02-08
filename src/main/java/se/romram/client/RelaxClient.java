@@ -29,6 +29,12 @@ public class RelaxClient {
 	private byte[] payload = null;
 	private StringBuffer result;
 	private HttpStatus httpStatus;
+    private long total = 0;
+    private long latency = 0;
+    private long sendTime = 0;
+    private long waitTime = 0;
+    private long receiveTime = 0;
+
 	private boolean isExceptionsToBeThrown = false;
 	private URL url = null;
     private RelaxCookieManager cookieManager;
@@ -49,6 +55,11 @@ public class RelaxClient {
         }
 		return this;
 	}
+
+    public RelaxClient setTimeout(int timeOutMillis) {
+        this.timeOutMillis = timeOutMillis;
+        return this;
+    }
 
 	public RelaxClient useDefaultCookieManager() {
 		return useCookieManager(new RelaxCookieManager());
@@ -76,6 +87,26 @@ public class RelaxClient {
         }
         return this;
 	}
+
+    public long getLatency() {
+        return latency;
+    }
+
+    public long getSendTime() {
+        return sendTime;
+    }
+
+    public long getWaitTime() {
+        return waitTime;
+    }
+
+    public long getReceiveTime() {
+        return receiveTime;
+    }
+
+    public long getTotal() {
+        return total;
+    }
 
     public RelaxClient head(String urlAsString) {
         httpMethod = HttpMethod.HEAD;
@@ -180,7 +211,9 @@ public class RelaxClient {
 		} catch (MalformedURLException e) {
 			if (isExceptionsToBeThrown) {
 				throw new UncheckedMalformedURLException(e);
-			}
+			} else {
+                log.error("The url '{}' is malformed!");
+            }
 		}
 		return this;
 	}
@@ -193,9 +226,14 @@ public class RelaxClient {
 		URLConnection urlConnection = null;
 
 		httpStatus = HttpStatus.OK;
+        long start = System.currentTimeMillis();
+        long snapshot = 0;
 
 		try {
             urlConnection = getUrlConnection(urlConnection);
+
+            snapshot = System.currentTimeMillis();
+            latency = snapshot-start;
 
             authorize(urlConnection);
 
@@ -217,9 +255,12 @@ public class RelaxClient {
 
 			responseHeaderFields = urlConnection.getHeaderFields();
 			httpStatus = HttpStatus.valueOfCode(((HttpURLConnection) urlConnection).getResponseCode());
-            updateCookiesFromResponse(responseHeaderFields);
 
-			if (httpStatus.isOK()) {
+            sendTime = System.currentTimeMillis()-snapshot;
+            updateCookiesFromResponse(responseHeaderFields);
+            snapshot = System.currentTimeMillis();
+
+            if (httpStatus.isOK()) {
 				readInputStream(result, urlConnection.getInputStream(), charsetName);
 			} else {
 				if (isExceptionsToBeThrown)
@@ -227,6 +268,9 @@ public class RelaxClient {
 				else
 					log.error("{} Url: '{}'", httpStatus.toString(), url);
 			}
+
+            receiveTime = System.currentTimeMillis()-snapshot;
+            snapshot = System.currentTimeMillis();
 
 		} catch (SocketTimeoutException e) {
 			httpStatus = HttpStatus.REQUEST_TIMEOUT;
@@ -237,6 +281,7 @@ public class RelaxClient {
 			if (! (e instanceof UncheckedHttpStatusCodeException)) {
 				httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
 				log.error(httpStatus.toString());
+                log.error(e.getMessage());
 			}
 			if (isExceptionsToBeThrown)
 				throw new UncheckedHttpStatusCodeException(httpStatus, e);
@@ -278,6 +323,9 @@ public class RelaxClient {
 			}
 		}
 //		response.setResponseString(result);
+
+        total = System.currentTimeMillis()-start;
+
 		return this;
 	}
 
