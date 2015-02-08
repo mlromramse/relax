@@ -209,7 +209,6 @@ public class RelaxServer extends Thread {
 						multiple = value.contains("g") ? 1000000000 : multiple;
 						int divisor = value.contains(".") ? 10 : 1;
 						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
-//                        buf.append(String.format(",\n\"%s\": %s", processDataNames[i], intValue));
 						buf.append(addServerValue(processDataNames[i], intValue));
                     }
                 }
