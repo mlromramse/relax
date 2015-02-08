@@ -43,8 +43,21 @@ public class TestHandler extends AbstractHandler {
             // No worries!
         }
         log.debug(requestString.toString());
+        delay(request);
         response.respond(status, "It worked!");
         return true;
+    }
+
+    private void delay(RelaxRequest request) {
+        if (request.getQueryMap() != null && request.getQueryMap().containsKey("delay")) {
+            try {
+                long sleep = Long.parseLong(request.getQueryMap().get("delay").get(0));
+                Thread.sleep(sleep);
+                log.debug("Sleeping for {} milliseconds", sleep);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 }
