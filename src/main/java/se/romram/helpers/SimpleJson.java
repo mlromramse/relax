@@ -9,8 +9,8 @@ import java.util.StringTokenizer;
  */
 public class SimpleJson {
 	Map<String, Object> jsonMap;
-	Map<String, Object> currentNode;
-	Map<String, Object> parentNode;
+	Object currentNode;
+	Object parentNode;
 
 	public SimpleJson(String jsonAsString) {
 		parse(jsonAsString);
@@ -33,6 +33,7 @@ public class SimpleJson {
 					currentNode = parentNode;
 					break;
 				case "[" :
+					
 					break;
 				case "]" :
 					break;
@@ -44,13 +45,15 @@ public class SimpleJson {
 					break;
 				default :
 					if (value) {
-						currentNode.put(name, trimChar(token, '\"'));
+						if (currentNode instanceof Map) {
+							((Map<String, Object>)currentNode).put(name, trimChar(token, '\"'));
+						}
 						System.out.println(name + "=" + token);
 						value = !value;
 					} else {
 						name = trimChar(token, '\"');
 					}
-				System.out.println(currentNode);
+				System.out.println(((Map<String, Object>)currentNode));
 			}
 		}
 		System.out.println(jsonMap);
@@ -62,18 +65,18 @@ public class SimpleJson {
 		return string;
 	}
 
-	private Map<String, Object> addNewNode(Map<String, Object> currentNode, String name) {
+	private Map<String, Object> addNewNode(Object currentNode, String name) {
 		if (currentNode == null) {
 			jsonMap = new HashMap<>();
 			currentNode = jsonMap;
 			parentNode = jsonMap;
-			return currentNode;
+			return (Map<String, Object>) currentNode;
 		}
 		Map<String, Object> temp = new HashMap<>();
-		currentNode.put(name, temp);
+		((Map<String, Object>)currentNode).put(name, temp);
 		parentNode = currentNode;
 		currentNode = temp;
-		return currentNode;
+		return (Map<String, Object>) currentNode;
 	}
 
 	public static void main(String[] args) {
