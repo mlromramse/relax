@@ -184,43 +184,47 @@ public class RelaxServer extends Thread {
         buf.append(addServerValue("arch", osArch));
         buf.append(addServerValue("version", osVersion));
         buf.append("\n}\n");
-        if (osName.toLowerCase().contains("nux")) {
-            try {
-                String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
+		unixStats(buf, osName);
+	}
+
+	private void unixStats(StringBuffer buf, String osName) {
+		if (osName.toLowerCase().contains("nux")) {
+			try {
+				String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
 				String[] script = {"/bin/sh", "-c", command};
-                log.debug("Executing: {}", script);
+				log.debug("Executing: {}", script);
 				long peekTime = System.currentTimeMillis();
-                Process process = Runtime.getRuntime().exec(script);
-                process.waitFor();
+				Process process = Runtime.getRuntime().exec(script);
+				process.waitFor();
 				peekTime = System.currentTimeMillis()-peekTime;
 				buf.append(addServerValue("peekTime", peekTime));
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String resultLine = "";
-                String line = "";
-                while ((line = reader.readLine()) != null) {
-                    resultLine += line;
-                }
+				BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+				String resultLine = "";
+				String line = "";
+				while ((line = reader.readLine()) != null) {
+					resultLine += line;
+				}
 				log.debug("Result: %s", resultLine);
-                String[] valueArr = resultLine.split(",");
-                for (int i=0; i<valueArr.length; i++) {
-                    if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
-                        String value = valueArr[i];
+				String[] valueArr = resultLine.split(",");
+				for (int i=0; i<valueArr.length; i++) {
+					if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
+						String value = valueArr[i];
 						int multiple = value.contains("m") ? 1000000 : processDataNames[i].contains("%") ? 1 : 1000;
 						multiple = value.contains("g") ? 1000000000 : multiple;
 						int divisor = value.contains(".") ? 10 : 1;
 						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
 						buf.append(addServerValue(processDataNames[i], intValue));
-                    }
-                }
-            } catch (IOException e) {
-                // ignore for fail safe purpose
-            } catch (InterruptedException e) {
+					}
+				}
+			} catch (IOException e) {
 				// ignore for fail safe purpose
-            }
-        }
-    }
+			} catch (InterruptedException e) {
+				// ignore for fail safe purpose
+			}
+		}
+	}
 
-    private String addServerValue(String key, Object value) {
+	private String addServerValue(String key, Object value) {
         return String.format(",\n%s", serverValue(key, value));
     }
 
