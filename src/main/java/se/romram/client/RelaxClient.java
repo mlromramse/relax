@@ -13,11 +13,7 @@ import se.romram.helpers.StopWatch;
 
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -197,6 +193,10 @@ public class RelaxClient {
         return result.toString();
     }
 
+	public byte[] getBytes() {
+		return response;
+	}
+
 	public String toString() {
 		try {
 			return response == null ? "null" : new String(response, charsetName);
@@ -266,7 +266,11 @@ public class RelaxClient {
             sendTime = stopWatch.lap().getLapTime();
 
 			responseHeaderFields = urlConnection.getHeaderFields();
-			httpStatus = HttpStatus.valueOfCode(((HttpURLConnection) urlConnection).getResponseCode());
+			if (urlConnection instanceof HttpURLConnection) {
+				httpStatus = HttpStatus.valueOfCode(((HttpURLConnection) urlConnection).getResponseCode());
+			} else {
+				httpStatus = HttpStatus.OK;
+			}
 
             updateCookiesFromResponse(responseHeaderFields);
 
@@ -290,7 +294,8 @@ public class RelaxClient {
 			if (! (e instanceof UncheckedHttpStatusCodeException)) {
 				httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
 				log.error(httpStatus.toString());
-                log.error(e.getMessage());
+                log.error("{}. '{}'", e.getClass().getSimpleName(), e.getMessage());
+				e.printStackTrace();
 			}
 			if (isExceptionsToBeThrown)
 				throw new UncheckedHttpStatusCodeException(httpStatus, e);
@@ -399,15 +404,15 @@ public class RelaxClient {
 			throw new IOException("No working inputStream.");
 		BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
-		int r = 0;
+		int bytesRead = 0;
 		byte[] buf = new byte[8192];
-		ByteBuffer byteBuffer = ByteBuffer.allocate(8192);
+		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-		while ((r = bufferedInputStream.read(buf)) != -1) {
-			byteBuffer.put(buf);
+		while ((bytesRead = bufferedInputStream.read(buf)) != -1) {
+			byteArrayOutputStream.write(Arrays.copyOf(buf, bytesRead));
 		}
 
-		return byteBuffer.array();
+		return byteArrayOutputStream.toByteArray();
 
 	}
 

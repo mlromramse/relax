@@ -3,14 +3,16 @@ import org.junit.Test;
 import org.slf4j.impl.SimpleLogger;
 import se.romram.client.RelaxClient;
 import se.romram.enums.HttpStatus;
+import se.romram.handler.DefaultFileHandler;
 import se.romram.handler.TestHandler;
 import se.romram.server.RelaxServer;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Created by micke on 2015-02-08.
@@ -21,9 +23,11 @@ public class RelaxClientTest extends AbstractTest {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
+		AbstractTest.beforeClass();
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
         new RelaxServer(port, new TestHandler()).start();
-    }
+		new RelaxServer(1360, new DefaultFileHandler("src/test/resources")).start();
+	}
 
     @Test
     public void testTimeout() {
@@ -101,6 +105,32 @@ public class RelaxClientTest extends AbstractTest {
 				, relaxClient.getTotal()
 				, (sumTotal + 500)/iterations/1000
 		);
+	}
+
+	@Test
+	public void testGetGif() throws IOException {
+		RelaxClient relaxClient = new RelaxClient().get("http://localhost:1360/java.gif");
+		System.out.println(relaxClient.getBytes().length);
+		byte[] binaryData = Files.readAllBytes(FileSystems.getDefault().getPath("src/test/resources/java.gif"));
+		assertEquals(binaryData.length, relaxClient.getBytes().length);
+		assertArrayEquals(binaryData, relaxClient.getBytes());
+	}
+
+	@Test
+	public void testGetIco() throws IOException {
+		RelaxClient relaxClient = new RelaxClient().get("http://localhost:1360/favicon.ico");
+		byte[] binaryData = Files.readAllBytes(FileSystems.getDefault().getPath("src/test/resources/favicon.ico"));
+		assertEquals(binaryData.length, relaxClient.getBytes().length);
+		assertArrayEquals(binaryData, relaxClient.getBytes());
+	}
+
+	@Test
+	public void testGetIcoByFile() throws IOException {
+		Path path = FileSystems.getDefault().getPath("src/test/resources/favicon.ico");
+		RelaxClient relaxClient = new RelaxClient().get(path.toUri().toString());
+		byte[] binaryData = Files.readAllBytes(path);
+		assertEquals(binaryData.length, relaxClient.getBytes().length);
+		assertArrayEquals(binaryData, relaxClient.getBytes());
 	}
 
 }
