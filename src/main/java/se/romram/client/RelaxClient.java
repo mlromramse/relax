@@ -3,15 +3,16 @@ package se.romram.client;
 import org.ow2.util.base64.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.romram.cookie.RelaxCookie;
 import se.romram.cookie.RelaxCookieManager;
 import se.romram.enums.HttpMethod;
 import se.romram.enums.HttpStatus;
 import se.romram.exceptions.UncheckedHttpStatusCodeException;
 import se.romram.exceptions.UncheckedMalformedURLException;
+import se.romram.exceptions.UncheckedUnsupportedEncodingException;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,7 @@ public class RelaxClient {
 	private int timeOutMillis = 30000;
 	private String charsetName = "UTF8";
 	private byte[] payload = null;
-	private StringBuffer result;
+	private byte[] response;
 	private HttpStatus httpStatus;
     private long total = 0;
     private long latency = 0;
@@ -195,7 +196,18 @@ public class RelaxClient {
     }
 
 	public String toString() {
-		return result == null ? "null" : result.toString();
+		try {
+			return response == null ? "null" : new String(response, charsetName);
+		} catch (UnsupportedEncodingException e) {
+			if (isExceptionsToBeThrown) {
+				throw new UncheckedUnsupportedEncodingException(e);
+			}
+			log.error("An exception of type '{}' has been thrown with message ''."
+					, e.getClass().getSimpleName()
+					, e.getMessage()
+			);
+			return "err - see log.";
+		}
 	}
 
 	private boolean hasPayload() {
@@ -222,7 +234,6 @@ public class RelaxClient {
 	 * This method does the actual communication to simplify the methods above.
 	 */
 	private RelaxClient doRequest() {
-		result = new StringBuffer();
 		URLConnection urlConnection = null;
 
 		httpStatus = HttpStatus.OK;
@@ -261,7 +272,7 @@ public class RelaxClient {
             snapshot = System.currentTimeMillis();
 
             if (httpStatus.isOK()) {
-				readInputStream(result, urlConnection.getInputStream(), charsetName);
+				response = readInputStream(urlConnection.getInputStream());
 			} else {
 				if (isExceptionsToBeThrown)
 					throw new UncheckedHttpStatusCodeException(httpStatus);
@@ -293,8 +304,7 @@ public class RelaxClient {
 		} catch (IOException e) {
 			if (urlConnection instanceof HttpURLConnection) {
 				try {
-					readInputStream(result, ((HttpURLConnection) urlConnection).getErrorStream(),
-							charsetName);
+					response = readInputStream(((HttpURLConnection) urlConnection).getErrorStream());
 				} catch (IOException e1) {
 					//TODO FIX
 					httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -322,7 +332,7 @@ public class RelaxClient {
 				((HttpURLConnection) urlConnection).disconnect();
 			}
 		}
-//		response.setResponseString(result);
+//		response.setResponseString(response);
 
         total = System.currentTimeMillis()-start;
 
@@ -382,30 +392,25 @@ public class RelaxClient {
     /**
 	 * Local helper method that reads data from an input stream.
 	 *
-	 * @param result
-	 *            The read text.
 	 * @param inputStream
 	 *            The stream to read.
-	 * @param charsetName
-	 *            The name of the char-set to be used to convert the read pay-load.
-	 * @throws java.io.UnsupportedEncodingException
 	 * @throws IOException
 	 */
-	private static void readInputStream(StringBuffer result, InputStream inputStream, String charsetName)
-			throws UnsupportedEncodingException, IOException {
+	private static byte[] readInputStream(InputStream inputStream) throws IOException {
 		if (inputStream == null)
 			throw new IOException("No working inputStream.");
-		InputStreamReader streamReader = new InputStreamReader(inputStream, charsetName);
-		BufferedReader bufferedReader = new BufferedReader(streamReader);
+		BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
 
-		String row;
-		while ((row = bufferedReader.readLine()) != null) {
-			result.append(row);
-			result.append("\n");
+		int r = 0;
+		byte[] buf = new byte[8192];
+		ByteBuffer byteBuffer = ByteBuffer.allocate(8192);
+
+		while ((r = bufferedInputStream.read(buf)) != -1) {
+			byteBuffer.put(buf);
 		}
 
-		bufferedReader.close();
-		streamReader.close();
+		return byteBuffer.array();
+
 	}
 
 
