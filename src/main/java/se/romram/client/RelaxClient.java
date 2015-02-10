@@ -9,6 +9,7 @@ import se.romram.enums.HttpStatus;
 import se.romram.exceptions.UncheckedHttpStatusCodeException;
 import se.romram.exceptions.UncheckedMalformedURLException;
 import se.romram.exceptions.UncheckedUnsupportedEncodingException;
+import se.romram.helpers.StopWatch;
 
 import java.io.*;
 import java.net.*;
@@ -24,6 +25,7 @@ import java.util.Map;
  */
 public class RelaxClient {
 	private Logger log = LoggerFactory.getLogger(RelaxClient.class);
+	private StopWatch stopWatch = new StopWatch();
 	private HttpMethod httpMethod;
 	private int timeOutMillis = 30000;
 	private String charsetName = "UTF8";
@@ -237,14 +239,12 @@ public class RelaxClient {
 		URLConnection urlConnection = null;
 
 		httpStatus = HttpStatus.OK;
-        long start = System.currentTimeMillis();
-        long snapshot = 0;
+		stopWatch.start();
 
 		try {
             urlConnection = getUrlConnection(urlConnection);
 
-            snapshot = System.currentTimeMillis();
-            latency = snapshot-start;
+            latency = stopWatch.lap().getLapTime();
 
             authorize(urlConnection);
 
@@ -263,13 +263,12 @@ public class RelaxClient {
                 urlConnection.getOutputStream().flush();
                 urlConnection.getOutputStream().close();
 			}
+            sendTime = stopWatch.lap().getLapTime();
 
 			responseHeaderFields = urlConnection.getHeaderFields();
 			httpStatus = HttpStatus.valueOfCode(((HttpURLConnection) urlConnection).getResponseCode());
 
-            sendTime = System.currentTimeMillis()-snapshot;
             updateCookiesFromResponse(responseHeaderFields);
-            snapshot = System.currentTimeMillis();
 
             if (httpStatus.isOK()) {
 				response = readInputStream(urlConnection.getInputStream());
@@ -280,8 +279,7 @@ public class RelaxClient {
 					log.error("{} Url: '{}'", httpStatus.toString(), url);
 			}
 
-            receiveTime = System.currentTimeMillis()-snapshot;
-            snapshot = System.currentTimeMillis();
+            receiveTime = stopWatch.lap().getLapTime();
 
 		} catch (SocketTimeoutException e) {
 			httpStatus = HttpStatus.REQUEST_TIMEOUT;
@@ -334,7 +332,7 @@ public class RelaxClient {
 		}
 //		response.setResponseString(response);
 
-        total = System.currentTimeMillis()-start;
+        total = stopWatch.stop().getTotalTime();
 
 		return this;
 	}

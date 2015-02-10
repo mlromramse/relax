@@ -16,9 +16,8 @@ import static org.junit.Assert.fail;
  * Created by micke on 2015-02-08.
  */
 public class RelaxClientTest extends AbstractTest {
-    private String baseUrl = "http://localhost";
-    private static int port = 2357;
-    String url = String.format("%s:%s", baseUrl, port);
+	private long sumTotal = 0;
+	private int iterations = 0;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -71,5 +70,37 @@ public class RelaxClientTest extends AbstractTest {
                 , relaxClient.getTotal()
         );
     }
+
+	@Test
+	public void testOK() {
+		RelaxClient relaxClient = new RelaxClient();
+		for (int i=0; i<20; i++) {
+			relaxClient.get(buildUrl("/200"));
+			logStats(relaxClient);
+			log.info("{} {}", relaxClient.getStatus().toString(), relaxClient.toString());
+		}
+	}
+
+	@Test
+	public void testCreated() {
+		RelaxClient relaxClient = new RelaxClient();
+		for (int i=0; i<20; i++) {
+			relaxClient.get(buildUrl("/201"));
+			logStats(relaxClient);
+			log.info("{} {}", relaxClient.getStatus().toString(), relaxClient.toString());
+		}
+	}
+
+	private void logStats(RelaxClient relaxClient) {
+		iterations++;
+		sumTotal = sumTotal + relaxClient.getTotal()*1000;
+		log.info("Request stats: latency={}, sendtime={}, receivetime={}, total={}, avg={}"
+				, relaxClient.getLatency()
+				, relaxClient.getSendTime()
+				, relaxClient.getReceiveTime()
+				, relaxClient.getTotal()
+				, (sumTotal + 500)/iterations/1000
+		);
+	}
 
 }
