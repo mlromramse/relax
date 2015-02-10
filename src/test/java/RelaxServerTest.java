@@ -114,6 +114,7 @@ public class RelaxServerTest extends AbstractTest {
         String cookieRequestHeader = relaxClient.getCookieManager().getCookieRequestHeaderBuffer(relaxClient.getUrl()).toString();
         assertThat(cookieRequestHeader, containsString("aCookie=aValue"));
         assertThat(cookieRequestHeader, not(containsString("expiredCookie=expired")));
+		server.end();
     }
 
     @Test

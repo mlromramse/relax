@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class AbstractTest {
     protected Logger log = LoggerFactory.getLogger(RelaxServerTest.class);
-	protected static int port = 2357;
+	protected static int port = 1361;
 	protected static String protocol = "http://";
 	protected static String domain = "localhost";
 	protected static String url = String.format("%s%s:%s", protocol, domain, port);
