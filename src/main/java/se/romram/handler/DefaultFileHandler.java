@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -102,17 +103,21 @@ public class DefaultFileHandler implements RelaxHandler {
 			log.warn("Empty request '{}'", request.getRequestBuffer());
 		}
         Path filePath = FileSystems.getDefault().getPath(pathAsString, request.getPath());
-        //log.debug(filePath.toAbsolutePath().toString());
 
         if ("HEAD".equalsIgnoreCase(request.getMethod())) {
-            return head(filePath, request, response);
+            return get(filePath, request, response, true);
         }
         if ("GET".equalsIgnoreCase(request.getMethod())) {
-            return get(filePath, request, response);
+            return get(filePath, request, response, false);
         }
         if ("PUT".equalsIgnoreCase(request.getMethod())) {
             return put(filePath, request, response);
         }
+		if ("POST".equalsIgnoreCase(request.getMethod())) {
+			UUID uuid = UUID.randomUUID();
+			filePath = FileSystems.getDefault().getPath(pathAsString, uuid.toString());
+			return put(filePath, request, response);
+		}
         if ("DELETE".equalsIgnoreCase(request.getMethod())) {
             return delete(filePath, request, response);
         }
@@ -122,21 +127,7 @@ public class DefaultFileHandler implements RelaxHandler {
         return true;
     }
 
-    private boolean head(Path filePath, RelaxRequest request, RelaxResponse response) {
-        try {
-            byte[] payload = getPayload(filePath, request, response);
-            long lastModified = filePath.toFile().lastModified();
-            response.addHeaders("Last-Modified: " + HTTPDate.formatDate(lastModified));
-            response.respond(204, "", payload.length);
-            return true;
-        } catch (IOException e) {
-            response.respond(404, "");
-            return true;
-        }
-
-    }
-
-    private boolean get(Path filePath, RelaxRequest request, RelaxResponse response) {
+    private boolean get(Path filePath, RelaxRequest request, RelaxResponse response, boolean head) {
         try {
             byte[] payload = getPayload(filePath, request, response);
             long lastModified = filePath.toFile().lastModified();
@@ -149,7 +140,11 @@ public class DefaultFileHandler implements RelaxHandler {
 				}
             }
             response.addHeaders("Last-Modified: " + HTTPDate.formatDate(lastModified));
-            response.respond(200, payload);
+			if (head) {
+				response.respond(204, "", payload.length);
+			} else {
+				response.respond(200, payload);
+			}
             return true;
         } catch (IOException e) {
             response.respond(404, "");
@@ -207,7 +202,7 @@ public class DefaultFileHandler implements RelaxHandler {
 			fileOutputStream.write(request.getPayload());
 			fileOutputStream.flush();
 			fileOutputStream.close();
-            response.respond(201, "File created!");
+            response.respond(201, String.format("File %s created!", filePath.getFileName()));
             return true;
         } catch (IOException e) {
             response.respond(500, "File was not created due to %s with message '%s'!", e.getClass().getSimpleName(), e.getMessage());
