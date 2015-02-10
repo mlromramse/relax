@@ -21,7 +21,7 @@ public class TestHandler extends AbstractHandler {
     @Override
     public boolean handle(RelaxRequest request, RelaxResponse response) {
         StringBuffer requestString = request.getRequestBuffer();
-        log.debug("A {} request for resource {} with queryParameters '{}' has been received by {} from user agent '{}'."
+        log.info("A {} request for resource {} with queryParameters '{}' has been received by {} from user agent '{}'."
                 , request.getMethod()
                 , request.getRequestURL()
                 , request.getQueryString()
