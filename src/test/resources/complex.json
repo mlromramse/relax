@@ -8,5 +8,6 @@
       {"value": "Close", "onclick": "CloseDoc()" "active": null}
     ]
   },
-  "size": 1024
+  "size": 1024,
+  ["string", "text", "another"]
 }}
