@@ -12,7 +12,7 @@ import java.util.*;
  * Created by micke on 2015-02-10.
  */
 public class SimpleJson {
-	Map<String, Object> jsonMap;
+	Object json;
 	Object currentNode;
 	Stack<Object> parentNode = new Stack<>();
 
@@ -24,14 +24,33 @@ public class SimpleJson {
         }
     }
 
+	private SimpleJson(Map<String, Object> jsonMap) {
+		this.json = jsonMap;
+	}
+
+	private SimpleJson(List<Object> jsonList) {
+		this.json = jsonList;
+	}
+
+	public SimpleJson get(String name) {
+		Object object = ((Map<String, Object>) json).get(name);
+		if (object instanceof Map) {
+			return new SimpleJson((Map<String, Object>) object);
+		}
+		if (object instanceof List) {
+			return new SimpleJson((List<Object>) object);
+		}
+		return null;
+	}
+
 	private void parse(String jsonAsString) throws ParseException {
 		String name = "";
 		boolean value = true;
 		StringTokenizer stringTokenizer = new StringTokenizer(jsonAsString, " ,{}[]:", true);
 		while (stringTokenizer.hasMoreTokens()) {
 			String token = stringTokenizer.nextToken();
-			System.out.print(token + " ==> ");
-			switch (token.trim()) {
+//			System.out.print(token + " ==> ");
+			switch (token.toLowerCase().trim()) {
 				case "" : break;
 				case "{" :
 					currentNode = addNewNode(currentNode, name);
@@ -53,38 +72,55 @@ public class SimpleJson {
 					value = !value;
 					break;
 				case "," :
-					System.out.println("comma");
 					break;
 				default :
 					if (value) {
-						if (currentNode instanceof Map) {
-                            if (token.charAt(0)=='\"') {
-                                ((Map<String, Object>) currentNode).put(name, trimChar(trimChar(token, '\"'), '\n'));
-                            } else {
-                                Number number = NumberFormat.getInstance().parse(trimChar(trimChar(token, '\"'), '\n'));
-                                ((Map<String, Object>) currentNode).put(name, number);
-                            }
-                            System.out.println(name + "=" + token);
-                            value = !value;
-						}
-                        if (currentNode instanceof List) {
-                            if (token.charAt(0)=='\"') {
-                                ((List<Object>)currentNode).add(trimChar(token, '\"'));
-                            } else {
-                                Number number = NumberFormat.getInstance().parse(trimChar(trimChar(token, '\"'), '\n'));
-                                ((List<Object>)currentNode).add(number);
-                            }
-                        }
+						value = addToCurrentNode(name, token);
 					} else {
 						name = trimChar(trimChar(token, '\"'), '\n');
 					}
 //				System.out.println(((Map<String, Object>)currentNode));
 			}
 		}
-		System.out.println(jsonMap);
+//		System.out.println(jsonMap);
 	}
 
-    private List<Object> addNewListNode(Object currentNode, String name) {
+	private boolean addToCurrentNode(String name, String token) throws ParseException {
+		if (currentNode instanceof Map) {
+			if (token.charAt(0)=='\"') {
+				((Map<String, Object>) currentNode).put(name, trimChar(trimChar(token, '\"'), '\n'));
+			} else {
+				Object value = naturalizeToken(token);
+				((Map<String, Object>) currentNode).put(name, value);
+			}
+			System.out.println(name + "=" + token);
+			return false;
+		}
+		if (currentNode instanceof List) {
+			if (token.charAt(0)=='\"') {
+				((List<Object>)currentNode).add(trimChar(token, '\"'));
+			} else {
+				Object value = naturalizeToken(token);
+				((List<Object>)currentNode).add(value);
+			}
+		}
+		return true;
+	}
+
+	private Object naturalizeToken(String token) throws ParseException {
+		if ("true".equals(token.toLowerCase())) {
+			return true;
+		} else if ("false".equals(token.toLowerCase())) {
+			return false;
+		} else if ("null".equals(token.toLowerCase())) {
+			return null;
+		} else {
+			Number number = NumberFormat.getInstance().parse(trimChar(trimChar(token, '\"'), '\n'));
+			return number;
+		}
+	}
+
+	private List<Object> addNewListNode(Object currentNode, String name) {
         if (currentNode == null) {
 
         }
@@ -103,9 +139,9 @@ public class SimpleJson {
 
 	private Map<String, Object> addNewNode(Object currentNode, String name) {
 		if (currentNode == null) {
-			jsonMap = new HashMap<>();
-			currentNode = jsonMap;
-			parentNode.push(jsonMap);
+			json = new HashMap<>();
+			currentNode = json;
+			parentNode.push(json);
 			return (Map<String, Object>) currentNode;
 		}
 		Map<String, Object> temp = new HashMap<>();
@@ -123,7 +159,7 @@ public class SimpleJson {
     public String toString(int indent) {
         int level=0;
         StringBuffer buf = new StringBuffer();
-        append(buf, jsonMap, level, indent);
+        append(buf, json, level, indent);
         return buf.toString();
     }
 
@@ -164,7 +200,7 @@ public class SimpleJson {
         if (object instanceof String) {
             buf.append("\"").append(object).append("\"");
         }
-        if (object instanceof Number) {
+        if (object == null || object instanceof Number || object instanceof Boolean) {
             buf.append(object);
         }
     }
@@ -177,7 +213,14 @@ public class SimpleJson {
         Path path = FileSystems.getDefault().getPath("src/test/resources/test.json");
         String json = new String(Files.readAllBytes(path));
         System.out.println(json);
-        System.out.println(new SimpleJson(json).toString(4));
-    }
+		StopWatch stopWatch = new StopWatch().start();
+		SimpleJson simpleJson = new SimpleJson(json);
+		stopWatch.stop();
+		System.out.println("Parsing took " + stopWatch.getTotalTime() + " ms.");
+		System.out.println(simpleJson.toString(4));
+		System.out.println(simpleJson.get("menu").get("popup").toString(4));
+		System.out.println(simpleJson.get("menu").get("popup").get("menuitem").toString(4));
+		System.out.println(simpleJson.toString(4));
+	}
 
 }
