@@ -1,5 +1,5 @@
 [
-    "string",
+    "String: This is sentence[1]. You can {} with this, and this.",
     1234,
     true,
     false,

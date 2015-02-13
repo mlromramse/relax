@@ -1,13 +1,15 @@
-{"menu": {
+{
+	"menu": {
   "id": "file",
-  "value": "File",
+  "value": "File"	,
   "popup": {
     "menuitem": [
       {"value": "New", "onclick": "CreateNewDoc()", "active": true},
       {"value": "Open", "onclick": "OpenDoc()", "active": false},
-      {"value": "Close", "onclick": "CloseDoc()" "active": null}
+      {"value": "Close", "onclick": "CloseDoc()", "active": null}
     ]
   },
-  "size": 1024,
-  ["string", "text", "another"]
-}}
+  "size": 1024	,
+  "array"	: ["string", "text", "another", "Strange: this[]", "This is a sentence with a {}, another and."]
+}
+}

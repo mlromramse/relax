@@ -56,53 +56,79 @@ public class SimpleJson {
 
 	private void parse(String jsonAsString) throws ParseException {
 		String name = "";
-		boolean value = true;
-		StringTokenizer stringTokenizer = new StringTokenizer(jsonAsString, " ,{}[]:\n", true);
+		String value = "";
+		boolean isValue = true;
+		boolean isOpenString = false;
+		StringTokenizer stringTokenizer = new StringTokenizer(jsonAsString, "\" ,{}[]:\n\t", true);
 		while (stringTokenizer.hasMoreTokens()) {
 			String token = stringTokenizer.nextToken();
-//			System.out.print(token + " ==> ");
-			switch (token.toLowerCase().trim()) {
+			if (isOpenString) {
+				value += token;
+			}
+			switch (token.toLowerCase()) {
+				case " " :
+					break;
 				case "" : break;
 				case "{" :
+					if (isOpenString) break;
 					currentNode = addNewNode(currentNode, name);
-					value = false;
+					isValue = false;
 					break;
 				case "}" :
+					if (isOpenString) break;
 					currentNode = parentNode.pop();
-                    value = false;
+                    isValue = false;
 					break;
 				case "[" :
+					if (isOpenString) break;
 					currentNode = addNewListNode(currentNode, name);
-                    value = true;
+                    isValue = true;
 					break;
 				case "]" :
+					if (isOpenString) break;
                     currentNode = parentNode.pop();
-                    value = false;
+                    isValue = false;
+					break;
+				case "\"" :
+					isOpenString = !isOpenString;
+					if (!isOpenString) {
+						if (isValue) {
+							isValue = addToCurrentNode(name, value);
+						} else {
+							name = trimChar(trimChar(value, '\"'), '\n');
+						}
+						value = "";
+					} else {
+						value += token;
+					}
 					break;
 				case ":" :
-					value = !value;
+					if (isOpenString) break;
+					isValue = !isValue;
 					break;
 				case "," :
 					break;
                 case "\n" :
                     break;
+				case "\t" :
+					break;
 				default :
-					if (value) {
-						value = addToCurrentNode(name, token);
+					if (isOpenString) break;
+					value += token;
+					if (isValue) {
+						isValue = addToCurrentNode(name, value);
 					} else {
-						name = trimChar(trimChar(token, '\"'), '\n');
+						name = trimChar(trimChar(value, '\"'), '\n');
 					}
-//				System.out.println(((Map<String, Object>)currentNode));
+					value = "";
 			}
 		}
-//		System.out.println(jsonMap);
 	}
 
 	private boolean addToCurrentNode(String name, String token) throws ParseException {
 		if (currentNode instanceof Map) {
             Object value = naturalizeToken(token);
             ((Map<String, Object>) currentNode).put(name, value);
-			System.out.println(name + "=" + token);
 			return false;
 		}
 		if (currentNode instanceof List) {
