@@ -15,18 +15,11 @@ public class TestHandler extends AbstractHandler {
 
 	public TestHandler() {
         log.info("This simple handler returns an http status code in case one is requested, e.g. /404. Always with the text 'It worked'");
-
 	}
 
     @Override
     public boolean handle(RelaxRequest request, RelaxResponse response) {
         StringBuffer requestString = request.getRequestBuffer();
-        log.info("A {} request for resource {} with queryParameters '{}' has been received by {} from user agent '{}'."
-                , request.getMethod()
-                , request.getRequestURL()
-                , request.getQueryString()
-                , this.getClass().getSimpleName()
-                , request.getUserAgent());
         if (request.getQueryMap() != null) {
             for (String key : request.getQueryMap().keySet()) {
                 String row = key + "=";

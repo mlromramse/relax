@@ -94,13 +94,9 @@ public class DefaultFileHandler implements RelaxHandler {
 
     @Override
     public boolean handle(RelaxRequest request, RelaxResponse response) {
-        log.info("A {} request for resource {} with queryParameters '{}' has been received from user agent '{}'."
-				, request.getMethod()
-				, request.getRequestURL()
-				, request.getQueryString()
-				, request.getUserAgent());
 		if (request.getMethod() == null) {
 			log.warn("Empty request '{}'", request.getRequestBuffer());
+            return false;
 		}
         Path filePath = FileSystems.getDefault().getPath(pathAsString, request.getPath());
 
@@ -121,10 +117,12 @@ public class DefaultFileHandler implements RelaxHandler {
         if ("DELETE".equalsIgnoreCase(request.getMethod())) {
             return delete(filePath, request, response);
         }
-
-        response.addHeaders("Allow: " + ALLOWED);
-        response.respond(405, "");
-        return true;
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.addHeaders("Allow: " + ALLOWED);
+            response.respond(405, "");
+            return true;
+        }
+        return false;
     }
 
     private boolean get(Path filePath, RelaxRequest request, RelaxResponse response, boolean head) {

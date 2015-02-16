@@ -12,12 +12,6 @@ public class RelaxServerHandler extends AbstractHandler {
     @Override
     public boolean handle(RelaxRequest relaxRequest, RelaxResponse relaxResponse) {
         if (!relaxRequest.getSocket().isClosed()) {
-            log.info("A {} request for resource {} with queryParameters '{}' has been received by {} from user agent '{}'."
-                    , relaxRequest.getMethod()
-                    , relaxRequest.getRequestURL()
-                    , relaxRequest.getQueryString()
-                    , this.getClass().getSimpleName()
-                    , relaxRequest.getUserAgent());
             if ("GET".equalsIgnoreCase(relaxRequest.getMethod())) {
                 if ("/serverstats".equalsIgnoreCase(relaxRequest.getPath())) {
                     relaxResponse.respond(200, relaxRequest.getRelaxServer().getStats());
@@ -39,7 +33,6 @@ public class RelaxServerHandler extends AbstractHandler {
                 return true;
             }
         }
-        log.debug("This request was not handled by {}.", this.getClass().getSimpleName());
         return false;
     }
 

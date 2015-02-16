@@ -34,7 +34,7 @@ public class RelaxServerTest extends AbstractTest {
 
 	@BeforeClass
 	public static void setup() throws IOException {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "ERROR");
+		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "INFO");
         new RelaxServer(port, new TestHandler()).start();
 	}
 

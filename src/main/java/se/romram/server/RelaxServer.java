@@ -97,11 +97,27 @@ public class RelaxServer extends Thread {
                         incrementActiveThreadsCount();
                         RelaxRequest relaxRequest = new RelaxRequest(socket, server);
                         RelaxResponse relaxResponse = new RelaxResponse(relaxRequest, server);
-                        if (!new RelaxServerHandler().handle(relaxRequest, relaxResponse)) {
+                        boolean handled = new RelaxServerHandler().handle(relaxRequest, relaxResponse);
+                        if (!handled) {
                             for (RelaxHandler handler : relaxHandlerList) {
-                                if (handler.handle(relaxRequest, relaxResponse)) {
+                                if (handled = handler.handle(relaxRequest, relaxResponse)) {
+                                    log.info("{} {}{} (handled by:{}, from:{}"
+                                            , relaxRequest.getMethod()
+                                            , relaxRequest.getRequestURL()
+                                            , relaxRequest.getQueryString()
+                                            , handler.getClass().getSimpleName().isEmpty() ? "<<inline handler>>" : handler.getClass().getSimpleName()
+                                            ,relaxRequest.getUserAgent()
+                                    );
                                     break;
                                 }
+                            }
+                            if (!handled) {
+                                log.info("{} {}{} (Not handled by any handler. From: {})"
+                                        , relaxRequest.getMethod()
+                                        , relaxRequest.getRequestURL()
+                                        , relaxRequest.getQueryString()
+                                        , relaxRequest.getUserAgent()
+                                );
                             }
                         }
                         decrementActiveThreadsCount();
