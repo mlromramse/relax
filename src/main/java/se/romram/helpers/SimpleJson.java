@@ -53,11 +53,17 @@ public class SimpleJson {
     }
 
 	public SimpleJson get(String name) throws ParseException {
+		if (!((Map<String, Object>) json).containsKey(name)) {
+			throw new NoSuchElementException("The element with name " + name + " could not be found!");
+		}
 		Object object = ((Map<String, Object>) json).get(name);
         return new SimpleJson(object);
 	}
 
     public SimpleJson get(int index) throws ParseException {
+		if (((List<Object>) json).size()<=index) {
+			throw new NoSuchElementException("The list only contains " + ((List<Object>) json).size() + " elements!");
+		}
         Object object = ((List<Object>) json).get(index);
         return new SimpleJson(object);
     }
