@@ -10,6 +10,8 @@
     ]
   },
   "size": 1024	,
-  "array"	: ["string", "text", "another", "Strange: this[]", "This is a sentence with a {}, another and."]
+  "array"	: ["string", "text", "another", "Strange: this[]", "This is a sentence with a {}, another and."],
+  "href": "http://domain.top/go/here",
+  "windowsPath": "c:\\this\\is\\the\\path"
 }
 }

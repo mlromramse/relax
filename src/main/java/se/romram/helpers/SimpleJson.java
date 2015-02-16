@@ -9,19 +9,24 @@ import java.text.ParseException;
 import java.util.*;
 
 /**
- * Created by micke on 2015-02-10.
+ * Created by mikael.larsson@romram.se on 2015-02-10.
+ *
+ * This class is a very simple implementation of a JSON parser.
+ * Its main goal is code size and to be lenient.
+ * The drawbacks of this is that it can accept and produce JSON that
+ * might not be a correct result.
+ * The benefit is that it accepts both names of name-value pairs that
+ * are surrounded with or without quotation marks.
+ * Every value that is not quoted is treated as boolean, null or a number.
  */
 public class SimpleJson {
-	Object json;
-	Object currentNode;
-	Stack<Object> parentNode = new Stack<>();
+    private static final String SPACES = "                                                               ";
+	private Object json;
+	private Object currentNode;
+	private Stack<Object> parentNode = new Stack<>();
 
-	public SimpleJson(String jsonAsString) {
-        try {
-            parse(jsonAsString);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+	public SimpleJson(String jsonAsString) throws ParseException {
+        parse(jsonAsString);
     }
 
 	private SimpleJson(Map<String, Object> jsonMap) {
@@ -32,37 +37,56 @@ public class SimpleJson {
 		this.json = jsonList;
 	}
 
-	public SimpleJson get(String name) {
-		Object object = ((Map<String, Object>) json).get(name);
-		if (object instanceof Map) {
-			return new SimpleJson((Map<String, Object>) object);
-		}
-		if (object instanceof List) {
-			return new SimpleJson((List<Object>) object);
-		}
-		return null;
-	}
-
-    public SimpleJson get(int index) {
-        Object object = ((List<Object>) json).get(index);
+    private SimpleJson(Object object) throws ParseException {
         if (object instanceof Map) {
-            return new SimpleJson((Map<String, Object>) object);
+            this.json = (Map<String, Object>) object;
+        } else if (object instanceof List) {
+            this.json = (List<Object>) object;
+        } else if (object instanceof String) {
+            parse("\"" + object + "\"");
+        } else if (object == null) {
+            this.json = null;
+        } else {
+            parse(object.toString());
         }
-        if (object instanceof List) {
-            return new SimpleJson((List<Object>) object);
-        }
-        return new SimpleJson(object.toString());
+
     }
 
-	private void parse(String jsonAsString) throws ParseException {
+	public SimpleJson get(String name) throws ParseException {
+		Object object = ((Map<String, Object>) json).get(name);
+        return new SimpleJson(object);
+	}
+
+    public SimpleJson get(int index) throws ParseException {
+        Object object = ((List<Object>) json).get(index);
+        return new SimpleJson(object);
+    }
+
+    public Object toObject() {
+        return json;
+    }
+
+    public String toString() {
+        return toString(0);
+    }
+
+    public String toString(int indent) {
+        int level=0;
+        StringBuffer buf = new StringBuffer();
+        append(buf, json, level, indent);
+        return buf.toString();
+    }
+
+    private void parse(String jsonAsString) throws ParseException {
 		String name = "";
 		String value = "";
 		boolean isValue = true;
 		boolean isOpenString = false;
-		StringTokenizer stringTokenizer = new StringTokenizer(jsonAsString, "\" ,{}[]:\n\t", true);
+        int currentRow = 1;
+		StringTokenizer stringTokenizer = new StringTokenizer(jsonAsString, "\"\\ ,{}[]:\n\t", true);
 		while (stringTokenizer.hasMoreTokens()) {
 			String token = stringTokenizer.nextToken();
-			if (isOpenString) {
+			if (isOpenString && !"\n".equals(token) && !"\\".equals(token)) {
 				value += token;
 			}
 			switch (token.toLowerCase()) {
@@ -108,7 +132,12 @@ public class SimpleJson {
 					break;
 				case "," :
 					break;
+                case "\\" :
+                    if (isOpenString) value += "\\";
+                    break;
                 case "\n" :
+                    currentRow++;
+                    if (isOpenString) value += "\\n";
                     break;
 				case "\t" :
 					break;
@@ -116,8 +145,12 @@ public class SimpleJson {
 					if (isOpenString) break;
 					value += token;
 					if (isValue) {
-						isValue = addToCurrentNode(name, value);
-					} else {
+                        try {
+                            isValue = addToCurrentNode(name, value);
+                        } catch (ParseException e) {
+                            throw new ParseException("Unparseable NaN found at row " + currentRow, currentRow);
+                        }
+                    } else {
 						name = trimChar(trimChar(value, '\"'), '\n');
 					}
 					value = "";
@@ -154,8 +187,8 @@ public class SimpleJson {
         } else if ("true".equals(token.toLowerCase())) {
             return true;
         } else {
-			Number number = NumberFormat.getInstance().parse(trimChar(trimChar(token, '\"'), '\n'));
-			return number;
+            Number number = NumberFormat.getInstance().parse(trimChar(trimChar(token, '\"'), '\n'));
+            return number;
 		}
 	}
 
@@ -197,20 +230,6 @@ public class SimpleJson {
 		currentNode = temp;
 		return (Map<String, Object>) currentNode;
 	}
-
-    public Object toObject() {
-        if (json instanceof Map || json instanceof List) {
-            return this;
-        }
-        return json;
-    }
-
-    public String toString(int indent) {
-        int level=0;
-        StringBuffer buf = new StringBuffer();
-        append(buf, json, level, indent);
-        return buf.toString();
-    }
 
     private void append(StringBuffer buf, Object object, int level, int indent) {
         if (object instanceof Map) {
@@ -255,21 +274,8 @@ public class SimpleJson {
     }
 
     private void appendIndent(StringBuffer buf, int level, int indent) {
-        buf.append("                                         ".substring(0, level*indent));
+        buf.append(SPACES.substring(0, level*indent));
     }
 
-    public static void main(String[] args) throws IOException {
-        Path path = FileSystems.getDefault().getPath("src/test/resources/test.json");
-        String json = new String(Files.readAllBytes(path));
-        System.out.println(json);
-		StopWatch stopWatch = new StopWatch().start();
-		SimpleJson simpleJson = new SimpleJson(json);
-		stopWatch.stop();
-		System.out.println("Parsing took " + stopWatch.getTotalTime() + " ms.");
-		System.out.println(simpleJson.toString(4));
-		System.out.println(simpleJson.get("menu").get("popup").toString(4));
-		System.out.println(simpleJson.get("menu").get("popup").get("menuitem").toString(4));
-		System.out.println(simpleJson.toString(4));
-	}
 
 }
