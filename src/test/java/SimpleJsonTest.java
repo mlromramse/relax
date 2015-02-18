@@ -112,4 +112,11 @@ public class SimpleJsonTest {
 //        System.out.println(simpleJson.get("name").toString(1));
 //    }
 
+    @Test
+    public void testPutMethod() throws ParseException {
+        SimpleJson json = new SimpleJson("{}");
+        json.put("test", "{}").put("name", "value");
+        System.out.println(json.toString(3));
+    }
+
 }
