@@ -41,7 +41,7 @@ public class SimpleJsonTest {
 //        System.out.println(simpleJson.get("menu").get("popup").toString(4));
 //        System.out.println(simpleJson.get("menu").get("popup").get("menuitem").toString(4));
 //        System.out.println(simpleJson.get("menu").get("popup").get("menuitem").get(1).toString(4));
-//        System.out.println(simpleJson.toString(4));
+        System.out.println(simpleJson.toString(4));
         assertEquals(false, simpleJson.get("menu").get("popup").get("menuitem").get(1).get("active").toObject());
         assertEquals("another", simpleJson.get("menu").get("array").get(2).toObject());
     }

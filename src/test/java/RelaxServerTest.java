@@ -67,7 +67,7 @@ public class RelaxServerTest extends AbstractTest {
         RelaxClient relaxClient = new RelaxClient();
         relaxClient.get(baseUrl + "/serverstats");
         if (relaxClient.getStatus().isOK()) {
-            log.debug(relaxClient.toString());
+            log.info(relaxClient.toString());
             assertThat(relaxClient.toString(), containsString("os"));
         }
     }

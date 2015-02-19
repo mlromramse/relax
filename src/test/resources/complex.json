@@ -12,6 +12,7 @@
   "size": 1024	,
   "array"	: ["string", "text", "another", "Strange: this[]", "This is a sentence with a {}, another and."],
   "href": "http://domain.top/go/here",
-  "windowsPath": "c:\\this\\is\\the\\path"
+  "windowsPath": "c:\\this\\is\\the\\path",
+  "numbers": [123, 12.3, 3.1415927, 1.23456E99]
 }
 }

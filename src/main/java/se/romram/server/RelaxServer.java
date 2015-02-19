@@ -3,13 +3,17 @@ package se.romram.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.romram.handler.RelaxHandler;
+import se.romram.helpers.SimpleJson;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,6 +25,7 @@ import java.util.concurrent.Executors;
  */
 public class RelaxServer extends Thread {
     private static final String UNIX_GET_PROCESS_DATA_ONELINER = "top -bp%1$s -n1|grep %1$s|tr -s \" \"|sed \"s/^ *//\"|cut -d \" \" -f 1- --output-delimiter \",\"";
+	private static final String SERVER_STATS = "scripts/cpu.sh %s";
     private String[] processDataNames = {"", "", "", "", "", "residentMem", "sharedMem", "", "cpu%", "mem%", ""};
     private Logger log = LoggerFactory.getLogger(RelaxServer.class);
 	private boolean active = false;
@@ -168,10 +173,11 @@ public class RelaxServer extends Thread {
         return pid;
     }
 
-    public synchronized String getStats() {
+    public String getStats() {
         StringBuffer buf = new StringBuffer("{\n");
         buf.append(serverValue("server", this.getClass().getSimpleName()));
         buf.append(addServerValue("pid", getProcessId()));
+		buf.append(addServerValue("port", port));
         buf.append(addServerValue("activeThreads", getActiveThreadsCount()));
         buf.append(addServerValue("requestCount", getRequestCount()));
         osStats(buf);
@@ -200,18 +206,27 @@ public class RelaxServer extends Thread {
         buf.append(addServerValue("arch", osArch));
         buf.append(addServerValue("version", osVersion));
         buf.append("\n}\n");
+		try {
+			Number sysload = (Double) ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
+			Number cors = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
+			buf.append(addServerValue("sysload", sysload));
+			buf.append(addServerValue("cors", cors));
+		} catch (Exception e) {
+			// For stability reasons
+		}
 		unixStats(buf, osName);
 	}
 
 	private void unixStats(StringBuffer buf, String osName) {
 		if (osName.toLowerCase().contains("nux")) {
 			try {
-				String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
+				String command = String.format(SERVER_STATS, getProcessId());
 				String[] script = {"/bin/sh", "-c", command};
 				log.debug("Executing: {}", script);
 				long peekTime = System.currentTimeMillis();
-				Process process = Runtime.getRuntime().exec(script);
+				Process process = new ProcessBuilder(getClass().getResource("preprocrun.sh").getFile(), ""+getProcessId()).start();
 				process.waitFor();
+				process = new ProcessBuilder(this.getClass().getResource("cpu.sh").getFile(), ""+getProcessId()).start();
 				peekTime = System.currentTimeMillis()-peekTime;
 				buf.append(addServerValue("peekTime", peekTime));
 				BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -220,22 +235,12 @@ public class RelaxServer extends Thread {
 				while ((line = reader.readLine()) != null) {
 					resultLine += line;
 				}
-				log.debug("Result: %s", resultLine);
-				String[] valueArr = resultLine.split(",");
-				for (int i=0; i<valueArr.length; i++) {
-					if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
-						String value = valueArr[i];
-						int multiple = value.contains("m") ? 1000000 : processDataNames[i].contains("%") ? 1 : 1000;
-						multiple = value.contains("g") ? 1000000000 : multiple;
-						int divisor = value.contains(".") ? 10 : 1;
-						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
-						buf.append(addServerValue(processDataNames[i], intValue));
-					}
-				}
-			} catch (IOException e) {
-				// ignore for fail safe purpose
-			} catch (InterruptedException e) {
-				// ignore for fail safe purpose
+				SimpleJson json = new SimpleJson(resultLine);
+				buf.append(",\n\"process\": ");
+				buf.append(json.toString(2));
+
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}

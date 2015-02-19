@@ -21,11 +21,13 @@ import java.util.*;
  */
 public class SimpleJson {
     private static final String SPACES = "                                                               ";
+	private NumberFormat numberFormat = NumberFormat.getInstance(Locale.ENGLISH);
 	private Object json;
 	private Object currentNode;
 	private Stack<Object> parentNode = new Stack<>();
 
 	public SimpleJson(String jsonAsString) throws ParseException {
+		numberFormat.setParseIntegerOnly(false);
         parse(jsonAsString);
     }
 
@@ -193,8 +195,10 @@ public class SimpleJson {
         } else if ("true".equals(token.toLowerCase())) {
             return true;
         } else {
-            Number number = NumberFormat.getInstance().parse(trimChar(trimChar(token, '\"'), '\n'));
-            return number;
+            Object object = numberFormat.parseObject(trimChar(trimChar(token, '\"'), '\n'));
+			if (object instanceof Double) return (Double) object;
+			if (object instanceof Float) return (Float) object;
+            return (Long) object;
 		}
 	}
 
