@@ -1,5 +1,7 @@
 package se.romram.helpers;
 
+import se.romram.exceptions.UncheckedNotApplicableException;
+
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -45,7 +47,11 @@ public class SimpleJson {
         } else if (object instanceof List) {
             this.json = (List<Object>) object;
         } else if (object instanceof String) {
-            parse("\"" + object + "\"");
+            if (((String) object).charAt(0)=='{' || ((String) object).charAt(0)=='[') {
+                parse(object.toString());
+            } else {
+                parse("\"" + object + "\"");
+            }
         } else if (object == null) {
             this.json = null;
         } else {
@@ -68,6 +74,15 @@ public class SimpleJson {
 		}
         Object object = ((List<Object>) json).get(index);
         return new SimpleJson(object);
+    }
+
+    public SimpleJson put(String name, Object object) throws ParseException {
+        if (! (json instanceof Map)) {
+            throw new UncheckedNotApplicableException("Current SimpleJson node has to be of type Map.");
+        }
+        SimpleJson temp = new SimpleJson(object);
+        ((Map<String, Object>) json).put(name, temp.toObject());
+        return temp;
     }
 
     public Object toObject() {
