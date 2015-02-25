@@ -25,7 +25,6 @@ import java.util.concurrent.Executors;
  */
 public class RelaxServer extends Thread {
     private static final String UNIX_GET_PROCESS_DATA_ONELINER = "top -bp%1$s -n1|grep %1$s|tr -s \" \"|sed \"s/^ *//\"|cut -d \" \" -f 1- --output-delimiter \",\"";
-	private static final String SERVER_STATS = "scripts/cpu.sh %s";
     private String[] processDataNames = {"", "", "", "", "", "residentMem", "sharedMem", "", "cpu%", "mem%", ""};
     private Logger log = LoggerFactory.getLogger(RelaxServer.class);
 	private boolean active = false;
@@ -220,22 +219,34 @@ public class RelaxServer extends Thread {
 	private void unixStats(StringBuffer buf, String osName) {
 		if (osName.toLowerCase().contains("nux")) {
 			try {
-				String command = String.format(SERVER_STATS, getProcessId());
+				String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
 				String[] script = {"/bin/sh", "-c", command};
 				log.debug("Executing: {}", script);
 				long peekTime = System.currentTimeMillis();
-				Process process = new ProcessBuilder(getClass().getResource("preprocrun.sh").getFile(), ""+getProcessId()).start();
+				Process process = Runtime.getRuntime().exec(script);
 				process.waitFor();
-				process = new ProcessBuilder(this.getClass().getResource("cpu.sh").getFile(), ""+getProcessId()).start();
 				peekTime = System.currentTimeMillis()-peekTime;
-				buf.append(addServerValue("peekTime", peekTime));
+
 				BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 				String resultLine = "";
 				String line = "";
 				while ((line = reader.readLine()) != null) {
 					resultLine += line;
 				}
-				SimpleJson json = new SimpleJson(resultLine);
+
+				SimpleJson json = new SimpleJson("{}");
+				json.put("peekTime", peekTime);
+				String[] resultArr = resultLine.split(",");
+				for (int i=0; i<resultArr.length; i++) {
+					if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
+						String value = resultArr[i];
+						int multiple = value.contains("m") ? 1000000 : processDataNames[i].contains("%") ? 1 : 1000;
+						multiple = value.contains("g") ? 1000000000 : multiple;
+						int divisor = value.contains(".") ? 10 : 1;
+						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
+						json.put(processDataNames[i], intValue);
+					}
+				}
 				buf.append(",\n\"process\": ");
 				buf.append(json.toString(2));
 
