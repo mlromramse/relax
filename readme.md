@@ -47,7 +47,7 @@ You will find the compiled artifact in the `target` directory.
     java -jar relax-n-n-n.jar
 
 In this fashion it will serve your files in the current directory on localhost:8080 with 10 threads in the pool. 
-There is also possible to change the port and/or path to another directory by adding one or both of the parameters:
+There is also possible to change the server port, path to another directory and/or the number of threads in the fixed thread pool by adding one, two or all of the parameters:
 
 * port=1234
 * path=/absolute/or/relative/path/to/a/directory
@@ -140,7 +140,7 @@ _One header has been added. Several headers can be added in the same method.
 Just separate them with a comma._
 
 _The content type is also set to text/html this time instead of the default text/plain, 
-since we return HTML tag this time._
+since we return HTML tags this time._
 
 
 
@@ -148,6 +148,7 @@ since we return HTML tag this time._
 
 To be usable as a stand alone web server the RelaxServer has two built in handlers.
 
+##### DefaultFileHandler
 The most usable is the DefaultFileHandler that is responsible for returning files from 
 your filesystem as requested. 
 If nothing is requested or if you select a directory a file listing is returned.
@@ -158,36 +159,39 @@ _Hidden files are not returned._
 Go to this url `http://localhost:8080` with both your favourite web browser and cUrl to see 
 the difference. 
 
+##### RelaxServerHandler
 The other built in handler manages a few tasks that can come in handy.
 First you can ask for `serverstats` which returns some statistics of the server.
 It is returned as json and can look like this:
 
 	{
 		server: "RelaxServer",
-		pid: "29807",
-		activeThreads: 1,
-		requestCount: "8",
+		pid: "16773",
+		port: 8080,
+		activeThreads: 2,
+		requestCount: "33065",
 		os: {
 			name: "Linux",
 			arch: "amd64",
 			version: "3.8.0-34-generic"
 		},
-		peekTime: "507",
-		residentMem: 28000000,
-		sharedMem: 11000000,
-		cpu%: 0,
-		mem%: 0,
+		sysload: "3.34",
+		cors: 4,
+		process: {
+			mem%: 1,
+			peekTime: 505,
+			sharedMem: 10000000,
+			residentMem: 257000000,
+			cpu%: 72
+		},
 		java: {
 			name: "Java HotSpot(TM) 64-Bit Server VM",
 			arch: "Oracle Corporation",
-			version: "1.8.0_31"
+			version: "1.7.0_76"
 		}
 	}
 
-_Some of these data items is collected from the underlying OS and most is returned on a Linux platform._
-
-_Always returned are everything except peekTime, residentMem, sharedMem, cpu% and mem%. 
-The cpu% item tells the cpu utilization of this process only as do the other values._
+_Most of these data items is collected from the underlying OS. The sysload value is an system overall value. Process values is only returned on a Linux platform and are in bytes and milliseconds where applicable. The cpu% item tells the cpu utilization of this process only as do the other values within the process element._
 
 
 ## The RelaxClient
