@@ -10,6 +10,7 @@ public class Properties {
     int port = 8080;
 	int threads = 10;
     String path = ".";
+	String execute = null;
     RelaxHandler handler;
 
     public Properties(String[] args) {
@@ -23,6 +24,9 @@ public class Properties {
             }
 			if (arg.toLowerCase().startsWith("threads=")) {
 				threads = getIntValue(arg);
+			}
+			if (arg.toLowerCase().startsWith("execute=")) {
+				execute = getValue(arg);
 			}
         }
         handler = new DefaultFileHandler(path);

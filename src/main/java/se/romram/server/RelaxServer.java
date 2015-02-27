@@ -116,7 +116,7 @@ public class RelaxServer extends Thread {
                                 }
                             }
                             if (!handled) {
-                                log.info("{} {}{} (Not handled by any handler. From: {})"
+                                log.warn("{} {}{} (Not handled by any handler. From: {})"
                                         , relaxRequest.getMethod()
                                         , relaxRequest.getRequestURL()
                                         , relaxRequest.getQueryString()

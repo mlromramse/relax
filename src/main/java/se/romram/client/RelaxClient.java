@@ -31,7 +31,7 @@ public class RelaxClient {
     private long total = 0;
     private long latency = 0;
     private long sendTime = 0;
-    private long waitTime = 0;
+	private long waitTime = 0;
     private long receiveTime = 0;
 
 	private boolean isExceptionsToBeThrown = false;
@@ -95,11 +95,11 @@ public class RelaxClient {
         return sendTime;
     }
 
-    public long getWaitTime() {
-        return waitTime;
-    }
+	public long getWaitTime() {
+		return waitTime;
+	}
 
-    public long getReceiveTime() {
+	public long getReceiveTime() {
         return receiveTime;
     }
 
@@ -226,7 +226,7 @@ public class RelaxClient {
 			if (isExceptionsToBeThrown) {
 				throw new UncheckedMalformedURLException(e);
 			} else {
-                log.error("The url '{}' is malformed!");
+                log.error("The url '{}' is malformed!", urlAsString);
             }
 		}
 		return this;
@@ -275,7 +275,9 @@ public class RelaxClient {
             updateCookiesFromResponse(responseHeaderFields);
 
             if (httpStatus.isOK()) {
-				response = readInputStream(urlConnection.getInputStream());
+				InputStream inputStream = urlConnection.getInputStream();
+				waitTime = stopWatch.lap().getLapTime();
+				response = readInputStream(inputStream);
 			} else {
 				if (isExceptionsToBeThrown)
 					throw new UncheckedHttpStatusCodeException(httpStatus);

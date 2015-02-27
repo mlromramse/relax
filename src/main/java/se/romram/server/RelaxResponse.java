@@ -74,7 +74,7 @@ public class RelaxResponse {
 
             int contentLength = 0;
 
-            if (response.length > 0) {
+            if (response != null && response.length > 0) {
                 if (values.length > 0) {
                     response = String.format(new String(response, relaxServer.charsetName), values).getBytes(relaxServer.charsetName);
                 }
@@ -86,7 +86,9 @@ public class RelaxResponse {
             addHeaders("Content-Length: " + contentLength);
             addHeaders("Content-Type: " + contentType + ";encoding: " + relaxServer.charsetName);
             writeHeaders(bufferedOutputStream, status);
-            bufferedOutputStream.write(response);
+			if (response != null) {
+				bufferedOutputStream.write(response);
+			}
 
             bufferedOutputStream.flush();
             bufferedOutputStream.close();

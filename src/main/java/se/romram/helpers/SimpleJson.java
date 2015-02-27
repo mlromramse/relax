@@ -68,6 +68,28 @@ public class SimpleJson {
         return new SimpleJson(object);
 	}
 
+	public Boolean getBoolean(String name) throws ParseException {
+		return (Boolean) get(name).toObject();
+	}
+
+	public Boolean getBoolean(String name, boolean defaultValue) {
+		try {
+			return getBoolean(name);
+		} catch (ParseException e) {
+			return defaultValue;
+		} catch (NoSuchElementException e) {
+			return defaultValue;
+		}
+	}
+
+	public Long getLong(String name) throws ParseException {
+		return (Long) get(name).toObject();
+	}
+
+	public String getString(String name) throws ParseException {
+		return get(name).toObject().toString();
+	}
+
     public SimpleJson get(int index) throws ParseException {
 		if (((List<Object>) json).size()<=index) {
 			throw new NoSuchElementException("The list only contains " + ((List<Object>) json).size() + " elements!");
@@ -75,6 +97,24 @@ public class SimpleJson {
         Object object = ((List<Object>) json).get(index);
         return new SimpleJson(object);
     }
+
+	public Long getLong(int index) throws ParseException {
+		return (Long) get(index).toObject();
+	}
+
+	public String getString(int index) throws ParseException {
+		return get(index).toObject().toString();
+	}
+
+	public int length() {
+		if (json instanceof Map) {
+			return ((Map<String, Object>) json).size();
+		}
+		if (json instanceof List) {
+			return ((List<Object>) json).size();
+		}
+		return -1;
+	}
 
     public SimpleJson put(String name, Object object) throws ParseException {
         if (! (json instanceof Map)) {

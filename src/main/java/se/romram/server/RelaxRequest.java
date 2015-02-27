@@ -34,8 +34,10 @@ public class RelaxRequest {
     private int contentLength = -1;
 
     private Map<String, List<String>> queryMap;
+	private Map<String, String> headerMap;
 
     public RelaxRequest(Socket socket, RelaxServer relaxServer) {
+		this.headerMap = new HashMap<>();
         this.socket = socket;
         this.relaxServer = relaxServer;
     }
@@ -79,7 +81,28 @@ public class RelaxRequest {
         return accept;
     }
 
-    public int getContentLength() {
+	public Map<String, String> getHeaderMap() {
+		parseRequest();
+		return headerMap;
+	}
+
+	public String getFromHeader(String name, String defaultValue) {
+		String value = getHeaderMap().get(name);
+		if (value != null) {
+			return value;
+		}
+		return defaultValue;
+	}
+
+	public int getIntFromHeader(String name, int defaultValue) {
+		String value = getHeaderMap().get(name);
+		if (value != null) {
+			return Integer.parseInt(value);
+		}
+		return defaultValue;
+	}
+
+	public int getContentLength() {
 		parseRequest();
         return contentLength;
     }
@@ -137,6 +160,13 @@ public class RelaxRequest {
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
+		if (pathAndQuery.indexOf("http") == 0) {
+			pathAndQuery = pathAndQuery.replaceAll("https?://", "");
+		}
+		int p=pathAndQuery.indexOf("/");
+		p = p==-1 ? pathAndQuery.length() : p;
+		pathAndQuery = pathAndQuery.substring(p);
+
 		int qm = pathAndQuery.indexOf('?');
         if (qm==-1) {
             queryString = "";
@@ -171,6 +201,7 @@ public class RelaxRequest {
                 //ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream();
 
 				requestBuffer = getHeadersFromStream(bufferedInputStream);
+				parseHeaders(requestBuffer);
 
 				boolean doWriteContinue = requestBuffer.indexOf("Expect:")!=-1 && requestBuffer.indexOf("100-continue")!=-1;
 
@@ -203,6 +234,22 @@ public class RelaxRequest {
         }
         return requestBuffer;
     }
+
+	private void parseHeaders(StringBuffer requestBuffer) {
+		String[] headerRows = requestBuffer.toString().split("\n");
+		for (String row : headerRows) {
+			String[] rowSplit = row.split(":");
+			if (rowSplit.length > 1) {
+				String name = rowSplit[0].trim();
+				String value = "";
+				for (int i=1; i<rowSplit.length; i++) {
+					value += i==1 ? rowSplit[i] : ":" + rowSplit[i];
+				}
+
+				headerMap.put(name, value);
+			}
+		}
+	}
 
 	private byte[] read(BufferedInputStream bufferedInputStream, int numChars) throws IOException {
 		byte[] buf = new byte[numChars];
