@@ -194,6 +194,35 @@ It is returned as json and can look like this:
 _Most of these data items is collected from the underlying OS. The sysload value is an system overall value. Process values is only returned on a Linux platform and are in bytes and milliseconds where applicable. The cpu% item tells the cpu utilization of this process only as do the other values within the process element._
 
 
+
+### Example of usage
+
+This example is a simple http proxy.
+
+	// Simple HTTP Proxy implementation
+	public static void main(String[] args) throws IOException {
+		final RelaxServer relaxServer = new RelaxServer(8080, new RelaxHandler() {
+			@Override
+			public boolean handle(RelaxRequest relaxRequest, RelaxResponse relaxResponse) {
+				String url = relaxRequest.getRequestURL();
+
+				RelaxClient relaxClient = new RelaxClient().get(url);
+
+				String accept = relaxRequest.getHeaderMap().get("Accept");
+				relaxResponse.setContentType(accept != null && accept.contains("text/css") ? "text/css" : "text/html");
+
+				relaxResponse.respond(relaxClient.getStatus().getCode(), relaxClient.getBytes());
+
+				return true;
+			}
+		});
+		relaxServer.start();
+	}
+
+
+
+
+
 ## The RelaxClient
 
 The RelaxClient can only be used from inside a Java program.
