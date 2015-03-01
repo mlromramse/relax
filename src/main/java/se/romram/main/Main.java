@@ -7,6 +7,9 @@ import se.romram.helpers.SimpleJson;
 import se.romram.server.RelaxServer;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Executor;
@@ -34,15 +37,10 @@ public class Main {
     }
 
 	private static void executeJsonFile(String execute) {
-		log.info("Current dir: {}", System.getProperty("user.dir"));
-		String filename = execute;
-		RelaxClient relaxClient = new RelaxClient().get(filename);
-		if (relaxClient.getStatus().getCode() == 404) {
-			log.error("The resource {} was not found!", filename);
-			return;
-		}
-		String jsonAsString = relaxClient.toString();
-		try {
+        Path path = FileSystems.getDefault().getPath(execute);
+
+        try {
+            String jsonAsString = new String(Files.readAllBytes(path));
 			final SimpleJson json = new SimpleJson(jsonAsString);
 			long virtualUsers = json.getLong("virtualUsers");
 			long delayPerUser = (json.getLong("rampUp") * 1000) / virtualUsers;
@@ -66,9 +64,11 @@ public class Main {
 			}
 		} catch (ParseException e) {
 			log.error("The json is not parseable.");
-		}
+		} catch (IOException e) {
+            log.error("File {} not found.", path.toAbsolutePath());
+        }
 
-	}
+    }
 
 	private static synchronized void decrementActiveThreadsCount() {
 		activeThreadsCount--;
