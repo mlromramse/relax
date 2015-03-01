@@ -175,7 +175,7 @@ public class SimpleJson {
 			return ((Map<String, Object>) json).size();
 		}
 		if (json instanceof List) {
-			return ((List<Object>) json).size();
+			return ((List<Object>) json)!=null ? ((List<Object>) json).size() : 0;
 		}
 		return -1;
 	}
