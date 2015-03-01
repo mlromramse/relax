@@ -37,13 +37,9 @@ public class SimpleJsonTest {
         SimpleJson simpleJson = new SimpleJson(json);
         stopWatch.stop();
         System.out.println("Parsing took " + stopWatch.getTotalTime() + " ms.");
-//        System.out.println(simpleJson.toString(4));
-//        System.out.println(simpleJson.get("menu").get("popup").toString(4));
-//        System.out.println(simpleJson.get("menu").get("popup").get("menuitem").toString(4));
-//        System.out.println(simpleJson.get("menu").get("popup").get("menuitem").get(1).toString(4));
-        System.out.println(simpleJson.toString(4));
-        assertEquals(false, simpleJson.get("menu").get("popup").get("menuitem").get(1).get("active").toObject());
-        assertEquals("another", simpleJson.get("menu").get("array").get(2).toObject());
+
+        assertEquals(false, simpleJson.get("menu").get("popup").get("menuitem").get(1).getBoolean("active"));
+        assertEquals("another", simpleJson.get("menu").get("array").getString(2));
     }
 
     @Test
@@ -53,11 +49,11 @@ public class SimpleJsonTest {
         StopWatch stopWatch = new StopWatch().start();
         SimpleJson simpleJson = new SimpleJson(json);
         stopWatch.stop();
-        assertEquals("String: This is sentence[1]. You can {} with this, and this.", simpleJson.get(0).toObject());
-        assertEquals(1234L, simpleJson.get(1).toObject());
-        assertEquals(true, simpleJson.get(2).toObject());
-        assertEquals(false, simpleJson.get(3).toObject());
-        assertEquals(null, simpleJson.get(4).toObject());
+        assertEquals("String: This is sentence[1]. You can {} with this, and this.", simpleJson.getString(0));
+        assertEquals(1234L, simpleJson.getLong(1));
+        assertEquals(true, simpleJson.getBoolean(2));
+        assertEquals(false, simpleJson.getBoolean(3));
+        assertEquals(null, simpleJson.getBoolean(4));
 
     }
 
@@ -101,22 +97,33 @@ public class SimpleJsonTest {
         assertEquals("ee3af8e5-84c3-4162-9eca-595e50b00e6a", simpleJson.get(152).get("guid").toObject());
     }
 
-//    @Test
-//    public void testTemp() throws ParseException {
-//        String json = "{\n" +
-//                "   \"name\": \"James Weber\",\n" +
-//                "   \"id\": 1\n" +
-//                "}";
-//        SimpleJson simpleJson = new SimpleJson(json);
-//        System.out.println(simpleJson.toString(3));
-//        System.out.println(simpleJson.get("name").toString(1));
-//    }
-
     @Test
     public void testPutMethod() throws ParseException {
         SimpleJson json = new SimpleJson("{}");
-        json.put("test", "{}").put("name", "value");
-        System.out.println(json.toString(3));
+        SimpleJson arr = json.put("arr", "[\"first\"]");
+        arr.add("String");
+        arr.add(true);
+        arr.add(false);
+        arr.add(null);
+        arr.add(123);
+        SimpleJson test = json.put("test", "{}");
+        test.put("name", "value");
+        test.put("boolean", true);
+        test.put("false", false);
+        assertEquals(true, json.get("test").getBoolean("boolean"));
+        assertEquals(null, json.get("arr").get(4).toObject());
+        assertEquals(123, json.get("arr").getLong(5));
+        assertEquals("value", json.get("test").getString("name"));
+    }
+
+    @Test
+    public void testDefaultValues() throws ParseException {
+        SimpleJson json = new SimpleJson("{}");
+        assertEquals("default", json.getString("name", "default"));
+        assertEquals(123, json.getLong("name", 123));
+        assertEquals(true, json.getBoolean("name", true));
+        assertEquals(null, json.get("name", null));
+        assertEquals(json, json.get("name", json));
     }
 
 }
