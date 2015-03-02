@@ -1,9 +1,10 @@
 {
-	"virtualUsers": 200,
-	"rampUp": 10,
-	"loop": 100,
-	"execute": [
+	"virtualUsers": 2,
+	"rampUp": 2,
+	"loop": 1,
+	"tasks": [
 		{
+		    "name": "Start call",
 			"loop": 1,
 			"url": "http://localhost:8080",
 			"validate": {
@@ -12,7 +13,16 @@
 			}
 		},
 		{
-			"active": false,
+		    "name": "Error page",
+			"loop": 1,
+			"url": "http://localhost:8080/404",
+			"validate": {
+				"status": [404]
+			}
+		},
+		{
+		    "name": "Server stats",
+			"active": true,
 			"loop": 1,
 			"url": "http://localhost:8080/serverstats",
 			"validate": {

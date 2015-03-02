@@ -7,6 +7,9 @@ import se.romram.helpers.SimpleJson;
 import se.romram.server.RelaxServer;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Executor;
@@ -18,6 +21,7 @@ import java.util.concurrent.Executors;
 public class Main {
 	private static Logger log = LoggerFactory.getLogger(Main.class);
 	private static int activeThreadsCount;
+    private static int threadsCount;
 
     public static final void main(String[] args) throws IOException {
         Properties props = new Properties(args);
@@ -34,25 +38,25 @@ public class Main {
     }
 
 	private static void executeJsonFile(String execute) {
-		log.info("Current dir: {}", System.getProperty("user.dir"));
-		String filename = execute;
-		RelaxClient relaxClient = new RelaxClient().get(filename);
-		if (relaxClient.getStatus().getCode() == 404) {
-			log.error("The resource {} was not found!", filename);
-			return;
-		}
-		String jsonAsString = relaxClient.toString();
-		try {
+        Path path = FileSystems.getDefault().getPath(execute);
+
+        try {
+            String jsonAsString = new String(Files.readAllBytes(path));
 			final SimpleJson json = new SimpleJson(jsonAsString);
-			long virtualUsers = json.getLong("virtualUsers");
-			long delayPerUser = (json.getLong("rampUp") * 1000) / virtualUsers;
+			long virtualUsers = json.getLong("virtualUsers", 1);
+            threadsCount = (int) virtualUsers;
+			long delayPerUser = virtualUsers>0
+                    ? (json.getLong("rampUp", 0) * 1000) / (virtualUsers-1)
+                    : 0;
 			Runnable runnable = new Runnable() {
 				@Override
 				public void run() {
 					try {
 						incrementActiveThreadsCount();
+                        log.info("Starting virtual user thread {}.", Thread.currentThread().getName());
 						executeJson(json);
 						decrementActiveThreadsCount();
+                        log.info("Ending virtual user thread {}.", Thread.currentThread().getName());
 					} catch (ParseException e) {
 						e.printStackTrace();
 					}
@@ -62,16 +66,23 @@ public class Main {
 			Executor executor = Executors.newFixedThreadPool((int) virtualUsers);
 			for (int i = 0; i<virtualUsers; i++) {
 				executor.execute(runnable);
-				sleep(delayPerUser);
+				if (i<virtualUsers-1) sleep(delayPerUser);
 			}
+            while (threadsCount > 0) {
+                sleep(1);
+            };
+            System.exit(0);
 		} catch (ParseException e) {
 			log.error("The json is not parseable.");
-		}
+		} catch (IOException e) {
+            log.error("File {} not found.", path.toAbsolutePath());
+        }
 
-	}
+    }
 
-	private static synchronized void decrementActiveThreadsCount() {
+    private static synchronized void decrementActiveThreadsCount() {
 		activeThreadsCount--;
+        threadsCount--;
 	}
 
 	private static synchronized void incrementActiveThreadsCount() {
@@ -80,34 +91,16 @@ public class Main {
 
 	private static void executeJson(SimpleJson json) throws ParseException {
 		long loops = ((Long) json.get("loop").toObject());
+        SimpleJson tasks = json.get("tasks", null);
 		for (int loop=0; loop<loops; loop++) {
-			int tasks = json.get("execute").length();
-			for (int i = 0; i < tasks; i++) {
-				SimpleJson taskJson = json.get("execute").get(i);
+			int taskLength = tasks.length();
+			for (int i = 0; i < taskLength; i++) {
+				SimpleJson taskJson = tasks.get(i);
 				if (taskJson.getBoolean("active", true) == true) {
 					executeTaskLoopJson(taskJson);
 				}
 			}
-			log.info("Loop done!");
 			sleep(json);
-		}
-		log.info("Done!");
-	}
-
-	private static void sleep(long sleepMillis) throws ParseException {
-		try {
-			Thread.sleep(sleepMillis);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static void sleep(SimpleJson json) throws ParseException {
-		try {
-			Long sleepMillis = (Long) json.get("delay").toObject();
-			sleep(sleepMillis);
-		} catch (NoSuchElementException e) {
-			// Do not sleep!
 		}
 	}
 
@@ -120,31 +113,23 @@ public class Main {
 
 	private static void executeTaskJson(SimpleJson taskJson) throws ParseException {
 		String url = taskJson.get("url").toObject().toString();
-		log.info("Getting '{}'", url);
 		RelaxClient relaxClient = new RelaxClient();
 		long timestamp = System.currentTimeMillis();
 		relaxClient.get(url);
-		boolean validateResult = validateRelaxClient(relaxClient, taskJson.get("validate"));
+		boolean validateResult = taskJson.get("validate", null) == null
+                ? true
+                : validateRelaxClient(relaxClient, taskJson.get("validate"));
 		System.out.println(String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s"
 				, timestamp
 				, relaxClient.getTotal()
-				, "name"
+				, taskJson.getString("name", null)
 				, relaxClient.getStatus().getCode()
 				, relaxClient.getStatus().getDescription()
-				, relaxClient.getStatus().isOK()
+				, validateResult
 				, activeThreadsCount
 				, activeThreadsCount
 				, relaxClient.getTotal()
 		));
-//		log.info("Validateresult was {}. Stats: timestamp={} latency={} sendtime={} waittime={} receivetime={} total={}"
-//				, validateResult
-//				, timestamp
-//				, relaxClient.getLatency()
-//				, relaxClient.getSendTime()
-//				, relaxClient.getWaitTime()
-//				, relaxClient.getReceiveTime()
-//				, relaxClient.getTotal()
-//		);
 		sleep(taskJson);
 	}
 
@@ -155,27 +140,49 @@ public class Main {
 	}
 
 	private static boolean validateRelaxClientStatus(RelaxClient relaxClient, SimpleJson validateJson) throws ParseException {
-		SimpleJson statuses = validateJson.get("status");
-		int statusesLength = statuses.length();
-		for (int i=0; i<statusesLength; i++) {
-			Long couldBe = statuses.getLong(i);
-			if (relaxClient.getStatus().getCode() == couldBe) {
-				return true;
-			}
-		}
-		return false;
+		SimpleJson statuses = validateJson.get("status", null);
+        if (statuses != null) {
+            int statusesLength = statuses.length();
+            for (int i = 0; i < statusesLength; i++) {
+                Long couldBe = statuses.getLong(i);
+                if (relaxClient.getStatus().getCode() == couldBe) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
 	}
 
 	private static boolean validateRelaxClientContains(RelaxClient relaxClient, SimpleJson validateJson) throws ParseException {
-		SimpleJson contains = validateJson.get("contains");
-		int containsLength = contains.length();
-		for (int i=0; i<containsLength; i++) {
-			String shouldContain = contains.getString(i);
-			if (!relaxClient.toString().contains(shouldContain)) {
-				return false;
-			}
-		}
+		SimpleJson contains = validateJson.get("contains", null);
+        if (contains != null) {
+            int containsLength = contains.length();
+            for (int i = 0; i < containsLength; i++) {
+                String shouldContain = contains.getString(i);
+                if (!relaxClient.toString().contains(shouldContain)) {
+                    return false;
+                }
+            }
+        }
 		return true;
 	}
+
+    private static void sleep(long sleepMillis) throws ParseException {
+        try {
+            if (sleepMillis > 0) Thread.sleep(sleepMillis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void sleep(SimpleJson json) throws ParseException {
+        try {
+            Long sleepMillis = (Long) json.get("delay").toObject();
+            sleep(sleepMillis);
+        } catch (NoSuchElementException e) {
+            // Do not sleep!
+        }
+    }
 
 }
