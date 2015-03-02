@@ -14,6 +14,8 @@ import java.text.ParseException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by micke on 2015-01-26.
@@ -156,14 +158,24 @@ public class Main {
 	}
 
 	private static boolean validateRelaxClientContains(RelaxClient relaxClient, SimpleJson validateJson) throws ParseException {
+		String data = relaxClient.toString();
 		SimpleJson contains = validateJson.get("contains", null);
         if (contains != null) {
             int containsLength = contains.length();
             for (int i = 0; i < containsLength; i++) {
-                String shouldContain = contains.getString(i);
-                if (!relaxClient.toString().contains(shouldContain)) {
-                    return false;
-                }
+				if (contains.getString(i).charAt(0) == '!') {
+					Pattern pattern = Pattern.compile(contains.getString(i).substring(1));
+					Matcher matcher = pattern.matcher(data);
+					if (matcher.find()) {
+						return false;
+					}
+				} else {
+					Pattern pattern = Pattern.compile(contains.getString(i));
+					Matcher matcher = pattern.matcher(data);
+					if (!matcher.find()) {
+						return false;
+					}
+				}
             }
         }
 		return true;

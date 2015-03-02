@@ -209,7 +209,7 @@ public class RelaxServer extends Thread {
 			Number sysload = (Double) ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
 			Number cors = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
 			buf.append(addServerValue("sysload", sysload));
-			buf.append(addServerValue("cors", cors));
+			buf.append(addServerValue("cores", cors));
 		} catch (Exception e) {
 			// For stability reasons
 		}

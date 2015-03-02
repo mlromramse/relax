@@ -341,7 +341,7 @@ We have defined a base loop of -1 which means loop forever:
 				"loop": 1,
 				"url": "http://localhost:8080",
 				"validate": {
-					"contains": ["pom.xml"],
+					"contains": ["pom.xml", "!filenameNotToBeFound"],
 					"status": [200]
 				},
 				"delay": 2000
@@ -361,7 +361,7 @@ We have defined a base loop of -1 which means loop forever:
 				"loop": 1,
 				"url": "http://localhost:8080/serverstats",
 				"validate": {
-					"contains": ["cpu%"],
+				"contains": ["^\{", "cpu%.:", "peekTime.:.*\d{1,3}"],
 					"status": [200]
 				},
 				"delay": 10000
@@ -379,7 +379,7 @@ of 3/15.5, approx 0.194.
 
 Since we are using 100 virtual users we have a constant load of around 19.4 tps.
 This is a cpu% load on the service of 15 % on a 4 core system.
-Quite a nice background noice.
+Quite a nice background noise.
 
 ##### The load.json file explained
 
@@ -391,9 +391,11 @@ Here is an explanation on all available parameters:
 * loop: -1=forever or as many as you want.
 * tasks: an array of task objects. No limit.
 * task.name: The name of the task in the log.
+* task.active: Flag to inactive task, e.g. during test phase.
 * task.loop: task independent loop.
 * task.url: the url to fetch.
-* task.validate.contains: an array of reg.exp strings that should match.
+* task.validate.contains: an array of reg.exp strings that should match and in 
+  case the reg.exp starts with ! reg.exp that should NOT match.
 * task.validate.status: an array of acceptable statuses. Any one should match.
 * task.delay: delay in milliseconds to pause after the request.
 
@@ -409,8 +411,8 @@ descriptor redirect feature that you get from a unix type system.
 	-jar target/relax-n.n.n.jar execute=src/test/resources/load.json \
 	2> errors.log 1> result.csv
 
-In the above call we set the error level to error although it is not necessary.
-But it keeps the errors.log file small.
+In the above call we set the error level to error although it is not strictly 
+necessary. But it keeps the errors.log file small.
 
 We execute the load.json file that is included in the project.
 
