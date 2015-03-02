@@ -45,7 +45,7 @@ public class Main {
 			final SimpleJson json = new SimpleJson(jsonAsString);
 			long virtualUsers = json.getLong("virtualUsers", 1);
             threadsCount = (int) virtualUsers;
-			long delayPerUser = virtualUsers>0
+			long delayPerUser = virtualUsers>1
                     ? (json.getLong("rampUp", 0) * 1000) / (virtualUsers-1)
                     : 0;
 			Runnable runnable = new Runnable() {
@@ -90,7 +90,8 @@ public class Main {
 	}
 
 	private static void executeJson(SimpleJson json) throws ParseException {
-		long loops = ((Long) json.get("loop").toObject());
+		long loops = json.getLong("loop", 1);
+		loops = loops==-1 ? Long.MAX_VALUE : loops;
         SimpleJson tasks = json.get("tasks", null);
 		for (int loop=0; loop<loops; loop++) {
 			int taskLength = tasks.length();
@@ -105,7 +106,7 @@ public class Main {
 	}
 
 	private static void executeTaskLoopJson(SimpleJson taskJson) throws ParseException {
-		long loops = taskJson.getLong("loop");
+		long loops = taskJson.getLong("loop", 1);
 		for (long loop=0; loop<loops; loop++) {
 			executeTaskJson(taskJson);
 		}
