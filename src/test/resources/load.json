@@ -1,7 +1,7 @@
 {
-	"virtualUsers": 2,
-	"rampUp": 2,
-	"loop": 1,
+	"virtualUsers": 100,
+	"rampUp": 10,
+	"loop": -1,
 	"tasks": [
 		{
 		    "name": "Start call",
@@ -10,7 +10,8 @@
 			"validate": {
 				"contains": ["pom.xml"],
 				"status": [200]
-			}
+			},
+			"delay": 2000
 		},
 		{
 		    "name": "Error page",
@@ -18,7 +19,8 @@
 			"url": "http://localhost:8080/404",
 			"validate": {
 				"status": [404]
-			}
+			},
+			"delay": 3000
 		},
 		{
 		    "name": "Server stats",
@@ -28,7 +30,8 @@
 			"validate": {
 				"contains": ["cpu%"],
 				"status": [200]
-			}
+			},
+			"delay": 10000
 		}
 	]
 }
