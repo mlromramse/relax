@@ -39,6 +39,8 @@ public class RelaxServer extends Thread {
     private List<String> headerList = Collections.synchronizedList(new ArrayList<String>());
     private String contentType = "text/plain; charset=utf8";
     private long pid = -1;
+	private SimpleJson processJson;
+	private long lastProcessJsonTimeStamp = 0;
 
 	public RelaxServer(int port, RelaxHandler handler) throws IOException {
 		this.port = port;
@@ -173,87 +175,97 @@ public class RelaxServer extends Thread {
     }
 
     public String getStats() {
-        StringBuffer buf = new StringBuffer("{\n");
-        buf.append(serverValue("server", this.getClass().getSimpleName()));
-        buf.append(addServerValue("pid", getProcessId()));
-		buf.append(addServerValue("port", port));
-        buf.append(addServerValue("activeThreads", getActiveThreadsCount()));
-        buf.append(addServerValue("requestCount", getRequestCount()));
-        osStats(buf);
-        javaStats(buf);
-        buf.append("\n}");
-        return buf.toString();
-    }
-
-    private void javaStats(StringBuffer buf) {
-        String javaName = System.getProperty("java.vm.name");
-        String javaVendor = System.getProperty("java.vendor");
-        String javaVersion = System.getProperty("java.version");
-        buf.append(",\n\"java\": {\n");
-        buf.append(serverValue("name", javaName));
-        buf.append(addServerValue("arch", javaVendor));
-        buf.append(addServerValue("version", javaVersion));
-        buf.append("\n}\n");
-    }
-
-    private void osStats(StringBuffer buf) {
-        String osName = System.getProperty("os.name");
-        String osArch = System.getProperty("os.arch");
-        String osVersion = System.getProperty("os.version");
-        buf.append(",\n\"os\": {\n");
-        buf.append(serverValue("name", osName));
-        buf.append(addServerValue("arch", osArch));
-        buf.append(addServerValue("version", osVersion));
-        buf.append("\n}\n");
 		try {
-			Number sysload = (Double) ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
-			Number cors = ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors();
-			buf.append(addServerValue("sysload", sysload));
-			buf.append(addServerValue("cores", cors));
+			SimpleJson json = new SimpleJson("{}");
+			json.put("server", this.getClass().getSimpleName());
+			json.put("pid", getProcessId());
+			json.put("port", port);
+			json.put("activeThreads", getActiveThreadsCount());
+			json.put("requestCount", getRequestCount());
+			json.put("os", getOsStatsJson());
+			json.put("java", getJavaStatsJson());
+			json.put("process", getUnixStatsJson());
+			return json.toString(2);
+		} catch (ParseException e) {
+			log.error("Failed to parse json");
+			return "";
+		}
+    }
+
+	private SimpleJson getOsStatsJson() throws ParseException {
+		SimpleJson osJson = new SimpleJson("{}");
+		osJson.put("name", System.getProperty("os.name"));
+		osJson.put("arch", System.getProperty("os.arch"));
+		osJson.put("version", System.getProperty("os.version"));
+		try {
+			osJson.put("sysload", ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage());
+			osJson.put("cores", ManagementFactory.getOperatingSystemMXBean().getAvailableProcessors());
 		} catch (Exception e) {
 			// For stability reasons
 		}
-		unixStats(buf, osName);
+		return osJson;
 	}
 
-	private void unixStats(StringBuffer buf, String osName) {
-		if (osName.toLowerCase().contains("nux")) {
-			try {
-				String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
-				String[] script = {"/bin/sh", "-c", command};
-				log.debug("Executing: {}", script);
-				long peekTime = System.currentTimeMillis();
-				Process process = Runtime.getRuntime().exec(script);
-				process.waitFor();
-				peekTime = System.currentTimeMillis()-peekTime;
+	private SimpleJson getJavaStatsJson() throws ParseException {
+		SimpleJson javaJson = new SimpleJson("{}");
+        javaJson.put("name", System.getProperty("java.vm.name"));
+		javaJson.put("vendor", System.getProperty("java.vendor"));
+		javaJson.put("version", System.getProperty("java.version"));
+		return javaJson;
+    }
 
-				BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-				String resultLine = "";
-				String line = "";
-				while ((line = reader.readLine()) != null) {
-					resultLine += line;
-				}
-
-				SimpleJson json = new SimpleJson("{}");
-				json.put("peekTime", peekTime);
-				String[] resultArr = resultLine.split(",");
-				for (int i=0; i<resultArr.length; i++) {
-					if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
-						String value = resultArr[i];
-						int multiple = value.contains("m") ? 1000000 : processDataNames[i].contains("%") ? 1 : 1000;
-						multiple = value.contains("g") ? 1000000000 : multiple;
-						int divisor = value.contains(".") ? 10 : 1;
-						int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
-						json.put(processDataNames[i], intValue);
-					}
-				}
-				buf.append(",\n\"process\": ");
-				buf.append(json.toString(2));
-
-			} catch (Exception e) {
-				e.printStackTrace();
+	private SimpleJson getUnixStatsJson() throws ParseException {
+		if (System.getProperty("os.name").toLowerCase().contains("nux")) {
+			if (lastProcessJsonTimeStamp + 2000 < System.currentTimeMillis()) {
+				setLastProcessJsonTimeStamp();
+				processJson = getUnixStats();
 			}
+		} else {
+			processJson = new SimpleJson("{}");
+			processJson.put("comment", "No stats available for this os.");
 		}
+		return processJson;
+	}
+
+	private synchronized void setLastProcessJsonTimeStamp() {
+		lastProcessJsonTimeStamp = System.currentTimeMillis();
+	}
+
+	private SimpleJson getUnixStats() throws ParseException {
+		try {
+			String command = String.format(UNIX_GET_PROCESS_DATA_ONELINER, getProcessId());
+			String[] script = {"/bin/sh", "-c", command};
+			log.debug("Executing: {}", script);
+			long peekTime = System.currentTimeMillis();
+			Process process = Runtime.getRuntime().exec(script);
+			process.waitFor();
+			peekTime = System.currentTimeMillis()-peekTime;
+
+			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+			String resultLine = "";
+			String line = "";
+			while ((line = reader.readLine()) != null) {
+				resultLine += line;
+			}
+
+			SimpleJson json = new SimpleJson("{}");
+			json.put("peekTime", peekTime);
+			String[] resultArr = resultLine.split(",");
+			for (int i=0; i<resultArr.length; i++) {
+				if (i<processDataNames.length && !processDataNames[i].isEmpty()) {
+					String value = resultArr[i];
+					int multiple = value.contains("m") ? 1000000 : processDataNames[i].contains("%") ? 1 : 1000;
+					multiple = value.contains("g") ? 1000000000 : multiple;
+					int divisor = value.contains(".") ? 10 : 1;
+					int intValue = Integer.parseInt(value.replace("m", "").replace("g", "").replace(".", "")) * multiple / divisor;
+					json.put(processDataNames[i], intValue);
+				}
+			}
+			return json;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new SimpleJson("{}");
 	}
 
 	private String addServerValue(String key, Object value) {
