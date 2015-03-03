@@ -16,7 +16,7 @@
 		},
 		{
 		    "name": "Error page",
-			"active": false,
+			"active": true,
 			"loop": 1,
 			"url": "http://localhost:8080/404",
 			"validate": {
@@ -30,7 +30,22 @@
 			"loop": 1,
 			"url": "http://localhost:8080/serverstats",
 			"validate": {
-				"contains": ["^\{", "cpu%.:", "peekTime.:.*\d{1,3}"],
+				"contains": [
+					"^\{",
+					"\}$",
+					"activeThreads",
+					"server",
+					"requestCount",
+					"process",
+					"cpu%.:",
+					"peekTime.:.*\d{1,3}",
+					"java",
+					"vendor",
+					"os",
+					"cores",
+					"port.: 8080",
+					"pid.: \d{1,5}"
+				],
 				"status": [200]
 			},
 			"delay": 10000
