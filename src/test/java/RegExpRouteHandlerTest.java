@@ -28,10 +28,10 @@ public class RegExpRouteHandlerTest extends AbstractTest {
 				relaxResponse.respond(200, "Routed response to test");
 				return true;
 			}
-		}).addRoute(HttpMethod.GET, "^/(.*)", new RelaxHandler() {
+		}).addRoute(HttpMethod.GET, "^/image/(.*)", new RelaxHandler() {
 			@Override
 			public boolean handle(RelaxRequest relaxRequest, RelaxResponse relaxResponse) {
-				relaxResponse.respond(200, "Routed response");
+				relaxResponse.respond(200, "Routed response to image");
 				return true;
 			}
 		})
@@ -40,8 +40,12 @@ public class RegExpRouteHandlerTest extends AbstractTest {
 		RelaxClient relaxClient;
 		relaxClient = new RelaxClient().get("http://localhost:2357/");
 		log.info(relaxClient.toString());
-		relaxClient = new RelaxClient().get("http://localhost:2357/test/hejsan");
+        relaxClient = new RelaxClient().get("http://localhost:2357/image/image.jpg");
+        log.info(relaxClient.toString());
+		relaxClient = new RelaxClient().get("http://localhost:2357/test/somefile.txt");
 		log.info(relaxClient.toString());
+        relaxClient = new RelaxClient().post("http://localhost:2357/test/somefile.txt");
+        log.info(relaxClient.toString());
 	}
 
 }

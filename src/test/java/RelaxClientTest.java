@@ -64,7 +64,7 @@ public class RelaxClientTest extends AbstractTest {
     }
 
     @Test
-    public void testStatisticsWikipedie() {
+    public void testStatisticsWikipedia() {
         RelaxClient relaxClient = new RelaxClient();
         relaxClient.get("http://en.wikipedia.org/wiki/List_of_HTTP_status_codes");
         log.debug("Statistics: latency={}, sendtime={}, receivetime={}, total={}"
