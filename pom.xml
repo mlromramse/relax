@@ -6,7 +6,7 @@
 
     <groupId>se.romram</groupId>
     <artifactId>relax</artifactId>
-    <version>1.1.1</version>
+    <version>1.2.1</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -50,6 +50,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
                 <configuration>
                     <!--excludes>
                         <exclude>**/log4j.properties</exclude>
@@ -82,19 +83,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--plugin>
-               <artifactId>maven-assembly-plugin</artifactId>
-               <configuration>
-                   <archive>
-                       <manifest>
-                           <mainClass>se.romram.main.Main</mainClass>
-                       </manifest>
-                   </archive>
-                   <descriptorRefs>
-                       <descriptorRef>runnable</descriptorRef>
-                   </descriptorRefs>
-               </configuration>
-           </plugin-->
         </plugins>
     </build>
 
