@@ -128,26 +128,27 @@ public class RelaxRequest {
 
     private void parseRequest() {
         if (method == null) {
+			StringBuffer lowerCaseRequestBuffer = new StringBuffer(getRequestBuffer().toString().toLowerCase());
             int b = 0;
             int e = getRequestBuffer().indexOf(" ", b);
             if (e == -1) return;
             method = getRequestBuffer().substring(b, e);
 
             b = e + 1;
-            e = getRequestBuffer().indexOf(" ", b);
+            e = lowerCaseRequestBuffer.indexOf(" ", b);
             if (e == -1) return;
             pathAndQuery = getRequestBuffer().substring(b, e);
             parsePathQuery(pathAndQuery);
 
-            b = getRequestBuffer().indexOf("Host:", e) + 5;
+            b = lowerCaseRequestBuffer.indexOf("host:", e) + 5;
             if (b == -1) return;
             host = getRequestBuffer().substring(b, getRequestBuffer().indexOf("\n", b)).trim();
 
-            b = getRequestBuffer().indexOf("User-Agent:", e) + 11;
+            b = lowerCaseRequestBuffer.indexOf("user-agent:", e) + 11;
             if (b == -1) return;
             userAgent = getRequestBuffer().substring(b, getRequestBuffer().indexOf("\n", b)).trim();
 
-            b = getRequestBuffer().indexOf("Accept:", e) + 7;
+            b = lowerCaseRequestBuffer.indexOf("accept:", e) + 7;
             if (b == -1) return;
             accept = getRequestBuffer().substring(b, getRequestBuffer().indexOf("\n", b)).trim();
 
