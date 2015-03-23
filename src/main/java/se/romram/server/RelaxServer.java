@@ -41,6 +41,7 @@ public class RelaxServer extends Thread {
     private long pid = -1;
 	private SimpleJson processJson;
 	private long lastProcessJsonTimeStamp = 0;
+	private RelaxServerHandler relaxServerHandler = new RelaxServerHandler();
 
 	public RelaxServer(int port, RelaxHandler handler) throws IOException {
 		this.port = port;
@@ -103,7 +104,7 @@ public class RelaxServer extends Thread {
                         incrementActiveThreadsCount();
                         RelaxRequest relaxRequest = new RelaxRequest(socket, server);
                         RelaxResponse relaxResponse = new RelaxResponse(relaxRequest, server);
-                        boolean handled = new RelaxServerHandler().handle(relaxRequest, relaxResponse);
+                        boolean handled = relaxServerHandler.handle(relaxRequest, relaxResponse);
                         if (!handled) {
                             for (RelaxHandler handler : relaxHandlerList) {
                                 if (handled = handler.handle(relaxRequest, relaxResponse)) {
@@ -112,20 +113,29 @@ public class RelaxServer extends Thread {
                                             , relaxRequest.getRequestURL()
                                             , relaxRequest.getQueryString()
                                             , handler.getClass().getSimpleName().isEmpty() ? "<<inline handler>>" : handler.getClass().getSimpleName()
-                                            ,relaxRequest.getUserAgent()
+                                            , relaxRequest.getUserAgent()
                                     );
                                     break;
                                 }
                             }
                             if (!handled) {
-                                log.warn("{} {}{} (Not handled by any handler. From: {})"
-                                        , relaxRequest.getMethod()
-                                        , relaxRequest.getRequestURL()
-                                        , relaxRequest.getQueryString()
-                                        , relaxRequest.getUserAgent()
-                                );
+								log.warn("{} {}{} (Not handled by any handler. From: {})"
+										, relaxRequest.getMethod()
+										, relaxRequest.getRequestURL()
+										, relaxRequest.getQueryString()
+										, relaxRequest.getUserAgent()
+								);
+								relaxResponse.respond(404, "Not Found!");
                             }
-                        }
+						} else {
+							log.info("{} {}{} (handled by:{}, from:{}"
+									, relaxRequest.getMethod()
+									, relaxRequest.getRequestURL()
+									, relaxRequest.getQueryString()
+									, relaxServerHandler.getClass().getSimpleName()
+									,relaxRequest.getUserAgent()
+							);
+						}
                         decrementActiveThreadsCount();
                     }
                 };
