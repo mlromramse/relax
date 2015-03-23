@@ -9,6 +9,7 @@ import se.romram.enums.HttpStatus;
 import se.romram.exceptions.UncheckedHttpStatusCodeException;
 import se.romram.exceptions.UncheckedMalformedURLException;
 import se.romram.exceptions.UncheckedUnsupportedEncodingException;
+import se.romram.helpers.RelaxIO;
 import se.romram.helpers.StopWatch;
 
 import java.io.*;
@@ -78,9 +79,14 @@ public class RelaxClient {
 		return this;
 	}
 
+	public RelaxClient setPayload(byte[] payload) {
+		this.payload = payload;
+		return this;
+	}
+
 	public RelaxClient setPayload(String payload) {
         try {
-            this.payload = payload.getBytes(charsetName);
+            setPayload(payload.getBytes(charsetName));
         } catch (UnsupportedEncodingException e) {
             log.error("The selected charset '{}' is not supported.", charsetName);
         }
@@ -277,7 +283,7 @@ public class RelaxClient {
             if (httpStatus.isOK()) {
 				InputStream inputStream = urlConnection.getInputStream();
 				waitTime = stopWatch.lap().getLapTime();
-				response = readInputStream(inputStream);
+				response = RelaxIO.readInputStream(inputStream);
 			} else {
 				if (isExceptionsToBeThrown)
 					throw new UncheckedHttpStatusCodeException(httpStatus);
@@ -309,7 +315,7 @@ public class RelaxClient {
 		} catch (IOException e) {
 			if (urlConnection instanceof HttpURLConnection) {
 				try {
-					response = readInputStream(((HttpURLConnection) urlConnection).getErrorStream());
+					response = RelaxIO.readInputStream(((HttpURLConnection) urlConnection).getErrorStream());
 				} catch (IOException e1) {
 					//TODO FIX
 					httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -393,30 +399,6 @@ public class RelaxClient {
         urlConnection.setReadTimeout(timeOutMillis);
         return urlConnection;
     }
-
-    /**
-	 * Local helper method that reads data from an input stream.
-	 *
-	 * @param inputStream
-	 *            The stream to read.
-	 * @throws IOException
-	 */
-	private static byte[] readInputStream(InputStream inputStream) throws IOException {
-		if (inputStream == null)
-			throw new IOException("No working inputStream.");
-		BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-
-		int bytesRead = 0;
-		byte[] buf = new byte[8192];
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-		while ((bytesRead = bufferedInputStream.read(buf)) != -1) {
-			byteArrayOutputStream.write(Arrays.copyOf(buf, bytesRead));
-		}
-
-		return byteArrayOutputStream.toByteArray();
-
-	}
 
 
 }

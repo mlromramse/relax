@@ -20,25 +20,28 @@ public class TestHandler extends AbstractHandler {
     @Override
     public boolean handle(RelaxRequest request, RelaxResponse response) {
         StringBuffer requestString = request.getRequestBuffer();
-        if (request.getQueryMap() != null) {
-            for (String key : request.getQueryMap().keySet()) {
-                String row = key + "=";
-                for (String value : request.getQueryMap().get(key)) {
-                    row += row.substring(row.length() - 1).equals("=") ? value : ", " + value;
-                }
-                log.debug(row);
-            }
-        }
-        int status = 200;
-        try {
-            status = Integer.parseInt(request.getPath().substring(1));
-        } catch (NumberFormatException e) {
-            // No worries!
-        }
-        log.debug(requestString.toString());
-        delay(request);
-        response.respond(status, "It worked!");
-        return true;
+		if ("GET".equalsIgnoreCase(request.getMethod())) {
+			if (request.getQueryMap() != null) {
+				for (String key : request.getQueryMap().keySet()) {
+					String row = key + "=";
+					for (String value : request.getQueryMap().get(key)) {
+						row += row.substring(row.length() - 1).equals("=") ? value : ", " + value;
+					}
+					log.debug(row);
+				}
+			}
+			int status = 200;
+			try {
+				status = Integer.parseInt(request.getPath().substring(1));
+			} catch (NumberFormatException e) {
+				// No worries!
+			}
+			log.debug(requestString.toString());
+			delay(request);
+			response.respond(status, "It worked!");
+			return true;
+		}
+		return false;
     }
 
     private void delay(RelaxRequest request) {

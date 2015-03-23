@@ -119,7 +119,7 @@ public class RelaxClientTest extends AbstractTest {
 	@Test
 	public void testGetIco() throws IOException {
 		RelaxClient relaxClient = new RelaxClient().get("http://localhost:1360/favicon.ico");
-		byte[] binaryData = Files.readAllBytes(FileSystems.getDefault().getPath("src/test/resources/favicon.ico"));
+		byte[] binaryData = Files.readAllBytes(FileSystems.getDefault().getPath("src/main/resources/se/romram/server/romram.ico"));
 		assertEquals(binaryData.length, relaxClient.getBytes().length);
 		assertArrayEquals(binaryData, relaxClient.getBytes());
 	}
