@@ -38,7 +38,7 @@ It is the DefaultFileHandler that is used when the RelaxServer is started from i
 
 ### The jar is runnable
 
-When built with maven using the maven-dependecy-plugin the jar is a runnable server in its own right.
+When built with maven using the maven-dependency-plugin the jar is a runnable server in its own right.
 
 ##### Build like this:
 
