@@ -2,12 +2,8 @@ package se.romram.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.romram.helpers.RelaxIO;
 import se.romram.server.RelaxRequest;
 import se.romram.server.RelaxResponse;
-
-import java.io.IOException;
-import java.net.URL;
 
 /**
  * Created by micke on 2015-01-01.
@@ -22,18 +18,6 @@ public class RelaxStatsHandler extends AbstractHandler {
                     relaxResponse.respond(200, relaxRequest.getRelaxServer().getStats());
                     return true;
                 }
-				if ("/favicon.ico".equalsIgnoreCase(relaxRequest.getPath())) {
-					URL icoUrl = this.getClass().getResource("romram.ico");
-					byte[] icoContent = null;
-					try {
-						icoContent = RelaxIO.readInputStream(icoUrl.openStream());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					relaxResponse.respond(200, icoContent);
-					return true;
-				}
-
 			}
             if ("POST".equalsIgnoreCase(relaxRequest.getMethod()) || "GET".equalsIgnoreCase(relaxRequest.getMethod())) {
                 if ("/echo".equalsIgnoreCase(relaxRequest.getPath())) {
