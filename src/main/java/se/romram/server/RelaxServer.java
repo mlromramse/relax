@@ -2,14 +2,15 @@ package se.romram.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.romram.handler.RelaxFaviconHandler;
 import se.romram.handler.RelaxHandler;
+import se.romram.handler.RelaxStatsHandler;
 import se.romram.helpers.SimpleJson;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -41,7 +42,8 @@ public class RelaxServer extends Thread {
     private long pid = -1;
 	private SimpleJson processJson;
 	private long lastProcessJsonTimeStamp = 0;
-	private RelaxServerHandler relaxServerHandler = new RelaxServerHandler();
+	private RelaxStatsHandler relaxStatsHandler = new RelaxStatsHandler();
+	private RelaxFaviconHandler relaxFaviconHandler = new RelaxFaviconHandler();
 
 	public RelaxServer(int port, RelaxHandler handler) throws IOException {
 		this.port = port;
@@ -87,14 +89,16 @@ public class RelaxServer extends Thread {
     }
 
     public void run() {
+		addRelaxHandler(relaxFaviconHandler);
+		addRelaxHandler(relaxStatsHandler);
 		active = true;
 		log.info("The server is active and monitors port {}", port);
-		log.debug(" * using handler {}.", relaxHandlerList.get(0).getClass().getSimpleName());
+		for (RelaxHandler handler : relaxHandlerList) {
+			log.debug(" * using handler {}.", handler.getClass().getSimpleName());
+		}
 		while (active) {
 			try {
-//				log.debug("Waiting for request!");
 				final Socket socket = serverSocket.accept();
-//				log.debug("Socket accept!" + socket.getRemoteSocketAddress());
 				socket.setSoTimeout(timeoutMillis);
                 final   RelaxServer server = this;
 
@@ -104,37 +108,29 @@ public class RelaxServer extends Thread {
                         incrementActiveThreadsCount();
                         RelaxRequest relaxRequest = new RelaxRequest(socket, server);
                         RelaxResponse relaxResponse = new RelaxResponse(relaxRequest, server);
-                        boolean handled = relaxServerHandler.handle(relaxRequest, relaxResponse);
-                        if (!handled) {
-                            for (RelaxHandler handler : relaxHandlerList) {
-                                if (handled = handler.handle(relaxRequest, relaxResponse)) {
-                                    log.info("{} {}{} (handled by:{}, from:{}"
-                                            , relaxRequest.getMethod()
-                                            , relaxRequest.getRequestURL()
-                                            , relaxRequest.getQueryString()
-                                            , handler.getClass().getSimpleName().isEmpty() ? "<<inline handler>>" : handler.getClass().getSimpleName()
-                                            , relaxRequest.getUserAgent()
-                                    );
-                                    break;
-                                }
-                            }
-                            if (!handled) {
-								log.warn("{} {}{} (Not handled by any handler. From: {})"
+						long start = System.currentTimeMillis();
+                        boolean handled = false;
+						for (RelaxHandler handler : relaxHandlerList) {
+							if (handled = handler.handle(relaxRequest, relaxResponse)) {
+								log.info("{} {}{} (handled by:{} in {} ms, from:{}"
 										, relaxRequest.getMethod()
 										, relaxRequest.getRequestURL()
 										, relaxRequest.getQueryString()
+										, handler.getClass().getSimpleName().isEmpty() ? "<<inline handler>>" : handler.getClass().getSimpleName()
+										, System.currentTimeMillis() - start
 										, relaxRequest.getUserAgent()
 								);
-								relaxResponse.respond(404, "Not Found!");
-                            }
-						} else {
-							log.info("{} {}{} (handled by:{}, from:{}"
+								break;
+							}
+						}
+						if (!handled) {
+							log.warn("{} {}{} (Not handled by any handler. From: {})"
 									, relaxRequest.getMethod()
 									, relaxRequest.getRequestURL()
 									, relaxRequest.getQueryString()
-									, relaxServerHandler.getClass().getSimpleName()
-									,relaxRequest.getUserAgent()
+									, relaxRequest.getUserAgent()
 							);
+							relaxResponse.respond(404, "Not Found!");
 						}
                         decrementActiveThreadsCount();
                     }
@@ -277,18 +273,6 @@ public class RelaxServer extends Thread {
 		}
 		return new SimpleJson("{}");
 	}
-
-	private String addServerValue(String key, Object value) {
-        return String.format(",\n%s", serverValue(key, value));
-    }
-
-    private String serverValue(String key, Object value) {
-		if (value instanceof Integer) {
-			return String.format("\"%s\": %s", key, value != null ? value : "null");
-		}
-        return String.format("\"%s\": \"%s\"", key, value != null ? value.toString() : "null");
-    }
-
 
     public synchronized int getActiveThreadsCount() {
         return activeThreadsCount;
