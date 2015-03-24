@@ -127,7 +127,7 @@ public class RelaxRequest {
     }
 
     private void parseRequest() {
-        if (method == null) {
+        if (method == null && getRequestBuffer() != null) {
 			StringBuffer lowerCaseRequestBuffer = new StringBuffer(getRequestBuffer().toString().toLowerCase());
             int b = 0;
             int e = getRequestBuffer().indexOf(" ", b);
