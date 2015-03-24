@@ -2,7 +2,6 @@ package se.romram.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.romram.enums.HttpMethod;
 import se.romram.enums.HttpStatus;
 
 import java.io.BufferedOutputStream;
