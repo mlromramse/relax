@@ -145,9 +145,8 @@ public class DefaultFileHandler implements RelaxHandler {
 			}
             return true;
         } catch (IOException e) {
-            response.respond(404, "");
 			log.warn("File {} not found.", filePath);
-            return true;
+            return false;
         }
 
     }
