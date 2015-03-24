@@ -4,7 +4,7 @@ import org.slf4j.impl.SimpleLogger;
 import se.romram.client.RelaxClient;
 import se.romram.enums.HttpStatus;
 import se.romram.handler.DefaultFileHandler;
-import se.romram.handler.TestHandler;
+import se.romram.handler.RelaxTestHandler;
 import se.romram.server.RelaxServer;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class RelaxClientTest extends AbstractTest {
     public static void beforeClass() throws IOException {
 		AbstractTest.beforeClass();
         System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
-        new RelaxServer(port, new TestHandler()).start();
+        new RelaxServer(port, new RelaxTestHandler()).start();
 		new RelaxServer(1360, new DefaultFileHandler("src/test/resources")).start();
 	}
 
@@ -33,7 +33,7 @@ public class RelaxClientTest extends AbstractTest {
     public void testTimeout() {
         RelaxClient relaxClient = new RelaxClient()
                 .setTimeout(500)
-                .get(url + "?delay=500");
+                .get(url + "/test?status=200&delay=500");
         if (relaxClient.getStatus().getCode() != 408) {
             fail("Request Timeout was not issued.");
         }
@@ -44,7 +44,7 @@ public class RelaxClientTest extends AbstractTest {
         RelaxClient relaxClient = new RelaxClient();
         for (HttpStatus httpStatus : HttpStatus.values()) {
             log.debug("Verifying status code {}.", httpStatus.getCode());
-            relaxClient.get(url + "/" + httpStatus.getCode());
+            relaxClient.get(url + "/test?status=" + httpStatus.getCode());
             if (relaxClient.getStatus().getCode() != httpStatus.getCode()) {
                 assertEquals(httpStatus.getCode(), relaxClient.getStatus().getCode());
             }
@@ -79,7 +79,7 @@ public class RelaxClientTest extends AbstractTest {
 	public void testOK() {
 		RelaxClient relaxClient = new RelaxClient();
 		for (int i=0; i<20; i++) {
-			relaxClient.get(buildUrl("/200"));
+			relaxClient.get(buildUrl("/test?status=200"));
 			logStats(relaxClient);
 			log.info("{} {}", relaxClient.getStatus().toString(), relaxClient.toString());
 		}
@@ -89,7 +89,7 @@ public class RelaxClientTest extends AbstractTest {
 	public void testCreated() {
 		RelaxClient relaxClient = new RelaxClient();
 		for (int i=0; i<20; i++) {
-			relaxClient.get(buildUrl("/201"));
+			relaxClient.get(buildUrl("/test?status=201"));
 			logStats(relaxClient);
 			log.info("{} {}", relaxClient.getStatus().toString(), relaxClient.toString());
 		}
@@ -119,14 +119,14 @@ public class RelaxClientTest extends AbstractTest {
 	@Test
 	public void testGetIco() throws IOException {
 		RelaxClient relaxClient = new RelaxClient().get("http://localhost:1360/favicon.ico");
-		byte[] binaryData = Files.readAllBytes(FileSystems.getDefault().getPath("src/main/resources/se/romram/server/romram.ico"));
+		byte[] binaryData = Files.readAllBytes(FileSystems.getDefault().getPath("src/main/resources/se/romram/handler/romram.ico"));
 		assertEquals(binaryData.length, relaxClient.getBytes().length);
 		assertArrayEquals(binaryData, relaxClient.getBytes());
 	}
 
 	@Test
-	public void testGetIcoByFile() throws IOException {
-		Path path = FileSystems.getDefault().getPath("src/test/resources/favicon.ico");
+	public void testGetByFile() throws IOException {
+		Path path = FileSystems.getDefault().getPath("src/test/resources/java.gif");
 		RelaxClient relaxClient = new RelaxClient().get(path.toUri().toString());
 		byte[] binaryData = Files.readAllBytes(path);
 		assertEquals(binaryData.length, relaxClient.getBytes().length);

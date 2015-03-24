@@ -2,16 +2,12 @@ import org.junit.*;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.slf4j.impl.SimpleLogger;
 import se.romram.client.RelaxClient;
 import se.romram.handler.DefaultFileHandler;
 import se.romram.handler.RelaxHandler;
-import se.romram.handler.TestHandler;
+import se.romram.handler.RelaxTestHandler;
 import se.romram.server.RelaxRequest;
 import se.romram.server.RelaxResponse;
 import se.romram.server.RelaxServer;
@@ -34,19 +30,19 @@ public class RelaxServerTest extends AbstractTest {
 
 	@BeforeClass
 	public static void setup() throws IOException {
-		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "INFO");
-        new RelaxServer(port, new TestHandler()).start();
+		System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+        new RelaxServer(port, new RelaxTestHandler()).start();
 	}
 
 	@Test
 	public void testGetOneLiner() {
-		assertThat(new RelaxClient().get(baseUrl).toString(), containsString("It worked"));
+		assertThat(new RelaxClient().get(baseUrl + "/test?status=200").toString(), containsString("It worked"));
 	}
 
 	@Test
 	public void testGetOneLinerWithExceptions() {
 		try {
-			new RelaxClient().throwExceptions().get(baseUrl + "/404?key=value1&key=value2");
+			new RelaxClient().throwExceptions().get(baseUrl + "/test?status=404&key=value1&key=value2");
 			fail("You should not get here since an exception is expected.");
 		} catch (Exception e) {
 		}
@@ -55,7 +51,7 @@ public class RelaxServerTest extends AbstractTest {
 	@Test
 	public void testGet() {
 		RelaxClient relaxClient = new RelaxClient();
-		relaxClient.get(baseUrl + "/500");
+		relaxClient.get(baseUrl + "/test?status=500");
 		if (relaxClient.getStatus().isOK()) {
 			log.debug("Response [{}]: {}", relaxClient.getStatus().getCode(), relaxClient);
 			fail("Should not be found!");
@@ -99,7 +95,7 @@ public class RelaxServerTest extends AbstractTest {
 
     @Test
     public void testCookie() throws IOException {
-        RelaxServer server = new RelaxServer(2367, new TestHandler()).addHeaders(
+        RelaxServer server = new RelaxServer(2367, new RelaxTestHandler()).addHeaders(
                 "Set-Cookie: aCookie=aValue"
                 , "Set-Cookie: expiredCookie=expired; Expires=Wed, 13 Jan 2001 22:23:01 GMT"
                 , "Set-Cookie: newCookie=cookieValue"

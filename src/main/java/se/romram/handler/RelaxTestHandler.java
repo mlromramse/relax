@@ -12,13 +12,18 @@ public class RelaxTestHandler extends AbstractHandler {
 	private Logger log = LoggerFactory.getLogger(RelaxTestHandler.class);
 
 	public RelaxTestHandler() {
-        log.info("This simple handler returns an http status code in case one is requested, e.g. /404. Always with the text 'It worked'");
+        log.info("-------------------------------------------------------------------------\n" +
+				 "This simple handler returns an http status code in case one is requested, " +
+				 "e.g. /test?status=404. Always with the text 'It worked'");
 	}
 
     @Override
     public boolean handle(RelaxRequest request, RelaxResponse response) {
         StringBuffer requestString = request.getRequestBuffer();
-		if ("GET".equalsIgnoreCase(request.getMethod())) {
+		log.debug(request.getPath());
+		if ("GET".equalsIgnoreCase(request.getMethod())
+				&& request.getPath().startsWith("/test")
+				&& request.getQueryMap() != null ) {
 			if (request.getQueryMap() != null) {
 				for (String key : request.getQueryMap().keySet()) {
 					String row = key + "=";
@@ -30,7 +35,7 @@ public class RelaxTestHandler extends AbstractHandler {
 			}
 			int status = 200;
 			try {
-				status = Integer.parseInt(request.getPath().substring(1));
+				status = Integer.parseInt(request.getQueryMap().get("status").get(0));
 			} catch (NumberFormatException e) {
 				// No worries!
 			}
