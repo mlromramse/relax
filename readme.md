@@ -18,7 +18,8 @@ So that might make this server less competent and more insecure.
 True, but it was made to simply test your other web apps you write and that it is able to do.
 At the moment of writing the stand alone, runnable, binary jar is around 100 kBytes.
 
-It also contains a HTTP Client that can HEAD, GET, PUT, POST, DELETE, TRACE, OPTIONS, PATCH, CONNECT to any url.
+It also contains a HTTP Client that can HEAD, GET, PUT, POST, DELETE, TRACE, OPTIONS, PATCH, 
+CONNECT to any url.
 
 New from version 1.1.0 is the ability to put load on a service with a simple json load description file.
 Read more in the RelaxClient section below.
@@ -37,7 +38,7 @@ It is the DefaultFileHandler that is used when the RelaxServer is started from i
 
 ### The jar is runnable
 
-When built with maven using the assembly plugin the jar is a runnable server in its own right.
+When built with maven using the maven-dependecy-plugin the jar is a runnable server in its own right.
 
 ##### Build like this:
 
@@ -49,18 +50,23 @@ You will find the compiled artifact in the `target` directory.
 
     java -jar relax-n.n.n.jar
 
-In this fashion it will serve your files in the current directory on localhost:8080 with 10 threads in the pool. 
-There is also possible to change the server port, path to another directory and/or the number of threads in the fixed thread pool by adding one, two or all of the parameters:
+In this fashion it will serve your files in the current directory on 
+localhost:8080 with 10 threads in the pool. 
+There is also possible to change the server port, path to another directory 
+and/or the number of threads in the fixed thread pool by adding one, two or all 
+of the parameters:
 
 * port=1234
 * path=/absolute/or/relative/path/to/a/directory
 * threads=20
+* execute=jsonfile (Read more in the RelaxClient section below)
 
 ##### Use the parameters like this:
 
     java -jar relax-n.n.n.jar port=1234 path=/absolute/or/relative/path/to/a/directory threads=20
 
-Now you can browse to http://localhost:1234 in your favorite browser and see the files in the pointed out directory.
+Now you can browse to http://localhost:1234 in your favorite browser and see the 
+files in the pointed out directory.
 
 By putting you can add files:
 
@@ -71,7 +77,7 @@ Please note that using ports below 1024 will need root privileges on a unix envi
 
 ##### Activate or deactivate logging
 
-The runnable jar is using the SimpleLogger from log4j and that logs any INFO logs by default.
+The runnable jar is using the SimpleLogger from slf4j and that logs any INFO logs by default.
 This can be adjusted by the standard Java VM argument for the SimpleLogger which is 
 `-Dorg.slf4j.simpleLogger.defaultLogLevel=WANTED_LEVEL` where the WANTED_LEVEL can be any of these:
 error, warn, info, debug or trace.
@@ -88,9 +94,11 @@ If you want the info logs but directed into a file you do:
 
 ### Import RelaxServer into your project using maven
 
-Build the project with maven like this:
+First build the relax project with maven like this:
 
 	mvn clean install
+	
+_This action will put the artifact in your local .m2/repository_
 	
 Include it using dependency statement in your pom.ml like this:
 
@@ -116,14 +124,15 @@ you can build a Hello World HTTP server as easy as this:
     server.start();
 
 At this point you can browse http://localhost:8080 to see the response. 
-Since no action is taken to distinguish between different paths the text 'Hello World!' will always be returned.
+Since no action is taken to distinguish between different paths the text 
+'Hello World!' will always be returned.
 
 
 
 #### Adding functionality to the server
 
-The RelaxServer class has a set of methods that all return the current object instance of the class which means that 
-the methods can be placed in a chain:
+The RelaxServer class has a set of methods that all return the current object 
+instance of the class which means that the methods can be placed in a chain:
 
     RelaxServer server = new RelaxServer(8080, new RelaxHandler() {
         public boolean handle(RelaxRequest request, RelaxResponse response) {
@@ -164,8 +173,14 @@ _Hidden files are not returned._
 Go to this url `http://localhost:8080` with both your favourite web browser and cUrl to see 
 the difference. 
 
-##### RelaxServerHandler
-The other built in handler manages a few tasks that can come in handy.
+##### RelaxFaviconHandler
+To be able to give a web browser the favicon it always asks for this handler is always
+added to the list of handlers but it is placed at the end.
+
+This means that you can easily replace the favicon with your own should you want that.
+
+##### RelaxStatsHandler
+Another built in handler manages a few tasks that can come in handy.
 First you can ask for `serverstats` which returns some statistics of the server.
 It is returned as json and can look like this:
 
@@ -390,14 +405,14 @@ Here is an explanation on all available parameters:
 * rampUp: time in seconds until all users are up.
 * loop: -1=forever or as many as you want.
 * tasks: an array of task objects. No limit.
-* task.name: The name of the task in the log.
-* task.active: Flag to inactive task, e.g. during test phase.
-* task.loop: task independent loop.
-* task.url: the url to fetch.
-* task.validate.contains: an array of reg.exp strings that should match and in 
-  case the reg.exp starts with ! reg.exp that should NOT match.
-* task.validate.status: an array of acceptable statuses. Any one should match.
-* task.delay: delay in milliseconds to pause after the request.
+	* task.name: The name of the task in the log.
+	* task.active: Flag to inactive task, e.g. during test phase.
+	* task.loop: task independent loop.
+	* task.url: the url to fetch.
+	* task.validate.contains: an array of reg.exp strings that should match and in 
+	  case the reg.exp starts with ! reg.exp that should NOT match.
+	* task.validate.status: an array of acceptable statuses. Any one should match.
+	* task.delay: delay in milliseconds to pause after the request.
 
 ##### Generate a file to upload to loadosophia.org
 
