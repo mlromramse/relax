@@ -6,8 +6,6 @@ import org.junit.runners.model.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.impl.SimpleLogger;
-import se.romram.handler.TestHandler;
-import se.romram.server.RelaxServer;
 
 import java.io.IOException;
 
