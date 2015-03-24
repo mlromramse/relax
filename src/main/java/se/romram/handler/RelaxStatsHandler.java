@@ -1,21 +1,19 @@
-package se.romram.server;
+package se.romram.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.romram.handler.AbstractHandler;
 import se.romram.helpers.RelaxIO;
-import sun.awt.image.URLImageSource;
+import se.romram.server.RelaxRequest;
+import se.romram.server.RelaxResponse;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 
 /**
  * Created by micke on 2015-01-01.
  */
-public class RelaxServerHandler extends AbstractHandler {
-    Logger log = LoggerFactory.getLogger(RelaxServerHandler.class);
+public class RelaxStatsHandler extends AbstractHandler {
+    Logger log = LoggerFactory.getLogger(RelaxStatsHandler.class);
     @Override
     public boolean handle(RelaxRequest relaxRequest, RelaxResponse relaxResponse) {
         if (!relaxRequest.getSocket().isClosed()) {

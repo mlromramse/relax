@@ -2,18 +2,16 @@ package se.romram.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.romram.enums.HttpStatus;
-import se.romram.exceptions.UncheckedHttpStatusCodeException;
 import se.romram.server.RelaxRequest;
 import se.romram.server.RelaxResponse;
 
 /**
  * Created by micke on 2014-12-02.
  */
-public class TestHandler extends AbstractHandler {
-	private Logger log = LoggerFactory.getLogger(TestHandler.class);
+public class RelaxTestHandler extends AbstractHandler {
+	private Logger log = LoggerFactory.getLogger(RelaxTestHandler.class);
 
-	public TestHandler() {
+	public RelaxTestHandler() {
         log.info("This simple handler returns an http status code in case one is requested, e.g. /404. Always with the text 'It worked'");
 	}
 
