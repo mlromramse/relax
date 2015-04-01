@@ -96,11 +96,11 @@ public class RelaxServer extends Thread {
 		for (RelaxHandler handler : relaxHandlerList) {
 			log.debug(" * using handler {}.", handler.getClass().getSimpleName());
 		}
+		final RelaxServer server = this;
 		while (active) {
 			try {
 				final Socket socket = serverSocket.accept();
 				socket.setSoTimeout(timeoutMillis);
-                final   RelaxServer server = this;
 
                 Runnable request = new Runnable() {
                     @Override
