@@ -6,10 +6,7 @@ import se.romram.helpers.HTTPDate;
 
 import java.net.URL;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
 
 /**
  * Simple cookie object created to reduce external dependencies.

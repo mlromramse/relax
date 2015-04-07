@@ -43,6 +43,27 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>cobertura-maven-plugin</artifactId>
+        <version>2.5.1</version>
+        <configuration>
+          <aggregate>true</aggregate>
+          <instrumentation>
+            <ignores>
+              <ignore>test.package.if.needed.later.*</ignore>
+            </ignores>
+            <excludes>
+              <exclude>javax/**/*.class</exclude>
+            </excludes>
+          </instrumentation>
+          <formats>
+            <format>html</format>
+            <format>xml</format>
+          </formats>
+          <check />
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <dependencies>

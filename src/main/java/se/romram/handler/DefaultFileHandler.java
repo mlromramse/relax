@@ -27,12 +27,11 @@ public class DefaultFileHandler implements RelaxHandler {
     private static final String ALLOWED = "HEAD,GET,POST,PUT,DELETE";
 
     private String pathAsString;
-    private Path path;
 
-	private Map<String, String> extensionContentTypeMap;
+    private Map<String, String> extensionContentTypeMap;
 
 	public DefaultFileHandler(String pathAsString) {
-        path = FileSystems.getDefault().getPath(pathAsString);
+        Path path = FileSystems.getDefault().getPath(pathAsString);
         this.pathAsString = pathAsString;
 		addExtensionContentType("class", "application/java");
 		addExtensionContentType("doc", "application/msword");
@@ -174,7 +173,7 @@ public class DefaultFileHandler implements RelaxHandler {
 					if (isHTMLAware) {
 						String path = request.getPath();
 						if (path.charAt(path.length() - 1) != '/') path += "/";
-						buf.append("</td><td><a href=\"" + path + file.getName() + "\">");
+						buf.append("</td><td><a href=\"").append(path).append(file.getName()).append("\">");
 					} else {
 						buf.append(" ");
 					}

@@ -2,10 +2,6 @@ package se.romram.helpers;
 
 import se.romram.exceptions.UncheckedNotApplicableException;
 
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
@@ -43,9 +39,9 @@ public class SimpleJson {
 
     private SimpleJson(Object object) throws ParseException {
         if (object instanceof Map) {
-            this.json = (Map<String, Object>) object;
+            this.json = object;
         } else if (object instanceof List) {
-            this.json = (List<Object>) object;
+            this.json = object;
         } else if (object instanceof String) {
             if (((String) object).charAt(0)=='{' || ((String) object).charAt(0)=='[') {
                 parse(object.toString());
@@ -175,7 +171,7 @@ public class SimpleJson {
 			return ((Map<String, Object>) json).size();
 		}
 		if (json instanceof List) {
-			return ((List<Object>) json)!=null ? ((List<Object>) json).size() : 0;
+			return json !=null ? ((List<Object>) json).size() : 0;
 		}
 		return -1;
 	}
@@ -324,9 +320,7 @@ public class SimpleJson {
             return true;
         } else {
             Object object = numberFormat.parseObject(trimChar(trimChar(token, '\"'), '\n'));
-			if (object instanceof Double) return (Double) object;
-			if (object instanceof Float) return (Float) object;
-            return (Long) object;
+            return object;
 		}
 	}
 

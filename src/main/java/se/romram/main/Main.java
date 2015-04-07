@@ -72,7 +72,7 @@ public class Main {
 			}
             while (threadsCount > 0) {
                 sleep(1);
-            };
+            }
             System.exit(0);
 		} catch (ParseException e) {
 			log.error("The json is not parseable.");
@@ -99,7 +99,7 @@ public class Main {
 			int taskLength = tasks.length();
 			for (int i = 0; i < taskLength; i++) {
 				SimpleJson taskJson = tasks.get(i);
-				if (taskJson.getBoolean("active", true) == true) {
+				if (taskJson.getBoolean("active", true)) {
 					executeTaskLoopJson(taskJson);
 				}
 			}
@@ -119,9 +119,7 @@ public class Main {
 		RelaxClient relaxClient = new RelaxClient();
 		long timestamp = System.currentTimeMillis();
 		relaxClient.get(url);
-		boolean validateResult = taskJson.get("validate", null) == null
-                ? true
-                : validateRelaxClient(relaxClient, taskJson.get("validate"));
+		boolean validateResult = taskJson.get("validate", null) == null || validateRelaxClient(relaxClient, taskJson.get("validate"));
 		System.out.println(String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s"
 				, timestamp
 				, relaxClient.getTotal()

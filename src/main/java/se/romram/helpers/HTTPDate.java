@@ -11,7 +11,7 @@ import java.util.TimeZone;
  */
 public class HTTPDate {
     private static SimpleDateFormat HTTP_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
-    static String sync = "syncObject";
+    static final String sync = "syncObject";
     static {
         HTTP_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
     }

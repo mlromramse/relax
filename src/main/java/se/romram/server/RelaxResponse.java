@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,9 +31,7 @@ public class RelaxResponse {
     }
 
     public RelaxResponse addHeaders(String... headerArr) {
-        for (String header : headerArr) {
-            headerList.add(header);
-        }
+        Collections.addAll(headerList, headerArr);
         return this;
     }
 

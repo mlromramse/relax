@@ -219,11 +219,8 @@ public class RelaxClient {
 	}
 
 	private boolean hasPayload() {
-		if (payload == null) {
-			return false;
-		}
-		return true;
-	}
+        return payload != null;
+    }
 
 	private RelaxClient setUrl(String urlAsString) {
 		try {
@@ -386,7 +383,7 @@ public class RelaxClient {
     }
 
     private URLConnection getUrlConnection(URLConnection urlConnection) throws IOException {
-        urlConnection = (URLConnection) url.openConnection();
+        urlConnection = url.openConnection();
         urlConnection.setDoInput(true);
         if (urlConnection instanceof HttpURLConnection) {
             if (hasPayload() && httpMethod == HttpMethod.DELETE) {

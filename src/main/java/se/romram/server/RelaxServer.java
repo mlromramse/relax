@@ -45,10 +45,14 @@ public class RelaxServer extends Thread {
 	private RelaxStatsHandler relaxStatsHandler = new RelaxStatsHandler();
 	private RelaxFaviconHandler relaxFaviconHandler = new RelaxFaviconHandler();
 
+    public RelaxServer(int port) throws IOException {
+        this.port = port;
+        serverSocket = new ServerSocket(port);
+    }
+
 	public RelaxServer(int port, RelaxHandler handler) throws IOException {
-		this.port = port;
+		this(port);
         addRelaxHandler(handler);
-		serverSocket = new ServerSocket(port);
 	}
 
     public RelaxServer(int port, RelaxHandler handler, Executor executor) throws IOException {
