@@ -107,7 +107,36 @@ public class RelaxRequest {
         return contentLength;
     }
 
-    public Map<String, List<String>> getQueryMap() {
+	/**
+	 * Picks the first value to the parameter with key=key.
+	 * <p>
+	 * <i>Simplified picker method to use when you expect only one value from a parameter.</i>
+	 * <p>
+	 *     For more advanced use see getQueryMap()
+	 * </p>
+	 * @param key The key of the parameter.
+	 * @return The value of the parameter or null if missing.
+	 */
+	public String getParameter(String key) {
+		if (getQueryMap() != null) {
+			List<String> resultList = getQueryMap().get(key);
+			if (resultList != null) {
+				return resultList.get(0);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Returns the complete map of query parameters.
+	 * Each parameter can be reused, i.e. <code>http://domain.io/path?key=val1&key=val2</code>
+	 * Therefore the values are held in a List of Strings.
+	 * <p>
+	 *     <i>For a simpler method when only one value is expected see getParameter(key)</i>
+	 * </p>
+	 * @return
+	 */
+	public Map<String, List<String>> getQueryMap() {
         parseRequest();
         if (queryMap == null && !queryString.isEmpty()) {
             queryMap = new HashMap<>();
