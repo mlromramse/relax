@@ -94,13 +94,15 @@ If you want the info logs but directed into a file you do:
 
 ### Import RelaxServer into your project using maven
 
+The requirements is that you have java 7 and maven installed for this to work. 
+
 First build the relax project with maven like this:
 
 	mvn clean install
 	
 _This action will put the artifact in your local .m2/repository_
 	
-Include it using dependency statement in your pom.ml like this:
+Include it using dependency statement in your pom.xml like this:
 
 	<dependency>
 		<groupId>se.romram</groupId>
