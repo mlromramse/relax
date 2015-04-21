@@ -28,7 +28,7 @@ public class RelaxServer extends Thread {
     private static final String UNIX_GET_PROCESS_DATA_ONELINER = "top -bp%1$s -n1|grep %1$s|tr -s \" \"|sed \"s/^ *//\"|cut -d \" \" -f 1- --output-delimiter \",\"";
     private String[] processDataNames = {"", "", "", "", "", "residentMem", "sharedMem", "", "cpu%", "mem%", ""};
     private Logger log = LoggerFactory.getLogger(RelaxServer.class);
-	private boolean active = false;
+	private volatile boolean active = false;
 	private int port;
 	protected List<RelaxHandler> relaxHandlerList = Collections.synchronizedList(new ArrayList<RelaxHandler>());
 	private ServerSocket serverSocket;
@@ -112,6 +112,7 @@ public class RelaxServer extends Thread {
                         incrementActiveThreadsCount();
                         RelaxRequest relaxRequest = new RelaxRequest(socket, server);
                         RelaxResponse relaxResponse = new RelaxResponse(relaxRequest, server);
+						relaxRequest.getRequestBuffer();
 						long start = System.currentTimeMillis();
                         boolean handled = false;
 						for (RelaxHandler handler : relaxHandlerList) {
@@ -136,7 +137,20 @@ public class RelaxServer extends Thread {
 							);
 							relaxResponse.respond(404, "Not Found!");
 						}
-                        decrementActiveThreadsCount();
+						try {
+							socket.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						} finally {
+							if (socket != null) {
+								try {
+									socket.close();
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						}
+						decrementActiveThreadsCount();
                     }
                 };
                 executor.execute(request);

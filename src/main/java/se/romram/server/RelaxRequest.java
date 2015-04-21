@@ -217,7 +217,7 @@ public class RelaxRequest {
     }
 
     public StringBuffer getRequestBuffer() {
-        if (requestBuffer == null) {
+        if (requestBuffer == null && !socket.isClosed()) {
             try {
                 InputStream inputStream = socket.getInputStream();
 

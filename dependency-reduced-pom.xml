@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>se.romram</groupId>
   <artifactId>relax</artifactId>
-  <version>1.2.4</version>
+  <version>1.2.5</version>
   <build>
     <plugins>
       <plugin>
@@ -23,6 +23,9 @@
               <addClasspath>true</addClasspath>
               <mainClass>se.romram.main.Main</mainClass>
             </manifest>
+            <manifestEntries>
+              <Class-Path>.</Class-Path>
+            </manifestEntries>
           </archive>
         </configuration>
       </plugin>

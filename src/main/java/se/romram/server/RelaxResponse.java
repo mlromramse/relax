@@ -90,17 +90,8 @@ public class RelaxResponse {
 
             bufferedOutputStream.flush();
             bufferedOutputStream.close();
-            socket.close();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (socket != null) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
         return this;
     }

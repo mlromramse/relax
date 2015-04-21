@@ -18,6 +18,7 @@ public class Properties {
     public RelaxHandler handler;
 
     public Properties(String[] args) {
+		handler = new DefaultFileHandler(path);
         for (int i=0; i<args.length; i++) {
             String arg = args[i];
 			if (arg.toLowerCase().startsWith("path=")) {
@@ -36,11 +37,25 @@ public class Properties {
 				execute = getValue(arg);
 				continue;
 			}
+			if (arg.toLowerCase().startsWith("handlerclass=")) {
+				String handlerClass = getValue(arg);
+				try {
+					ClassLoader classLoader = this.getClass().getClassLoader();
+					Class cls = classLoader.loadClass(handlerClass);
+					handler = (RelaxHandler) cls.newInstance();
+					System.out.printf("Your master handler is %s.", handler.getClass().getSimpleName());
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				}
+			}
 			//TODO Optimize
 			String[] split = arg.split("=");
 			argMap.put(split[0], split.length>1 ? split[1] : "true");
         }
-        handler = new DefaultFileHandler(path);
     }
 
     private int getIntValue(String arg) {
