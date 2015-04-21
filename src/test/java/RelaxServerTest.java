@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 
 import org.slf4j.impl.SimpleLogger;
 import se.romram.client.RelaxClient;
+import se.romram.enums.HttpStatus;
 import se.romram.handler.DefaultFileHandler;
 import se.romram.handler.RelaxHandler;
 import se.romram.handler.RelaxTestHandler;
@@ -36,7 +37,7 @@ public class RelaxServerTest extends AbstractTest {
 
 	@Test
 	public void testGetOneLiner() {
-		assertThat(new RelaxClient().get(baseUrl + "/test?status=200").toString(), containsString("It worked"));
+		assertThat(new RelaxClient().get(baseUrl + "/test?status=200").toString(), containsString(HttpStatus.valueOfCode(200).getDescription()));
 	}
 
 	@Test

@@ -2,6 +2,7 @@ package se.romram.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.romram.enums.HttpStatus;
 import se.romram.server.RelaxRequest;
 import se.romram.server.RelaxResponse;
 
@@ -14,7 +15,7 @@ public class RelaxTestHandler extends AbstractHandler {
 	public RelaxTestHandler() {
         log.info("-------------------------------------------------------------------------\n" +
 				 "This simple handler returns an http status code in case one is requested, " +
-				 "e.g. /test?status=404. Always with the text 'It worked'");
+				 "e.g. /test?status=404. Always with the status text as payload.");
 	}
 
     @Override
@@ -41,7 +42,7 @@ public class RelaxTestHandler extends AbstractHandler {
 			}
 			log.debug(requestString.toString());
 			delay(request);
-			response.respond(status, "It worked!");
+			response.respond(status, HttpStatus.valueOfCode(status).getDescription());
 			return true;
 		}
 		return false;
