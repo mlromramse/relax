@@ -120,7 +120,7 @@ public class RelaxServer extends Thread {
 								log.info("{} {}{} (handled by:{} in {} ms, from:{}"
 										, relaxRequest.getMethod()
 										, relaxRequest.getRequestURL()
-										, relaxRequest.getQueryString()
+										, relaxRequest.getQueryString().isEmpty() ? "" : "?"+relaxRequest.getQueryString()
 										, handler.getClass().getSimpleName().isEmpty() ? "<<inline handler>>" : handler.getClass().getSimpleName()
 										, System.currentTimeMillis() - start
 										, relaxRequest.getUserAgent()
