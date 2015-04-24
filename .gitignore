@@ -6,3 +6,4 @@ lab
 *.log
 *.test
 *.csv
+dependency-reduced-pom.xml
