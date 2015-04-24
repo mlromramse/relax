@@ -167,6 +167,12 @@ public class RelaxClient {
         return doRequest();
     }
 
+	public RelaxClient perform(String method, String urlAsString) {
+		httpMethod = HttpMethod.valueOf(method);
+		setUrl(urlAsString);
+		return doRequest();
+	}
+
 	/* Getters and Setters below */
 
 	public HttpStatus getStatus() {

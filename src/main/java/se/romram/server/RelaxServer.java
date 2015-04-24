@@ -96,7 +96,9 @@ public class RelaxServer extends Thread {
 		addRelaxHandler(relaxFaviconHandler);
 		addRelaxHandler(relaxStatsHandler);
 		active = true;
-		log.info("The server is active and monitors port {}", port);
+		log.info("The server is active with master handler {} and monitors port {}."
+				, relaxHandlerList.get(0).getClass().getSimpleName()
+				, port);
 		for (RelaxHandler handler : relaxHandlerList) {
 			log.debug(" * using handler {}.", handler.getClass().getSimpleName());
 		}
@@ -162,7 +164,7 @@ public class RelaxServer extends Thread {
 		log.info("The server is stopped.");
 	}
 
-    private synchronized void decrementActiveThreadsCount() {
+	private synchronized void decrementActiveThreadsCount() {
         activeThreadsCount--;
     }
 

@@ -3,7 +3,9 @@ package se.romram.main;
 import se.romram.handler.DefaultFileHandler;
 import se.romram.handler.RelaxHandler;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,10 +17,9 @@ public class Properties {
     public String path = ".";
 	public String execute = null;
 	public Map<String, String> argMap = new HashMap<>();
-    public RelaxHandler handler;
+    public List<String> handlerClassNameList = new ArrayList<>();
 
     public Properties(String[] args) {
-		handler = new DefaultFileHandler(path);
         for (int i=0; i<args.length; i++) {
             String arg = args[i];
 			if (arg.toLowerCase().startsWith("path=")) {
@@ -39,18 +40,7 @@ public class Properties {
 			}
 			if (arg.toLowerCase().startsWith("handlerclass=")) {
 				String handlerClass = getValue(arg);
-				try {
-					ClassLoader classLoader = this.getClass().getClassLoader();
-					Class cls = classLoader.loadClass(handlerClass);
-					handler = (RelaxHandler) cls.newInstance();
-					System.out.printf("Your master handler is %s.", handler.getClass().getSimpleName());
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (InstantiationException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-				}
+				handlerClassNameList.add(handlerClass);
 			}
 			//TODO Optimize
 			String[] split = arg.split("=");

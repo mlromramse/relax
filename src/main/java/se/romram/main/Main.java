@@ -3,6 +3,8 @@ package se.romram.main;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.romram.client.RelaxClient;
+import se.romram.handler.DefaultFileHandler;
+import se.romram.handler.RelaxHandler;
 import se.romram.helpers.SimpleJson;
 import se.romram.server.RelaxServer;
 
@@ -28,7 +30,9 @@ public class Main {
     public static final void main(String[] args) throws IOException {
         Properties props = new Properties(args);
 
-        RelaxServer server = new RelaxServer(props.port, props.handler);
+        RelaxServer server = new RelaxServer(props.port);
+		addPropertyAddedHandlers(props, server);
+
 		if (props.threads > 10) {
 			server.setExecutor(Executors.newFixedThreadPool(props.threads));
 		}
@@ -38,6 +42,28 @@ public class Main {
 			executeJsonFile(props.execute);
 		}
     }
+
+	private static void addPropertyAddedHandlers(Properties props, RelaxServer server) {
+		if (props.handlerClassNameList.size()>0) {
+			for (String handlerClassName : props.handlerClassNameList) {
+				try {
+					ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+					Class cls = classLoader.loadClass(handlerClassName);
+					RelaxHandler handler = (RelaxHandler) cls.newInstance();
+					server.addRelaxHandler(handler);
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				}
+			}
+		} else {
+			server.addRelaxHandler(new DefaultFileHandler(props.path));
+		}
+
+	}
 
 	private static void executeJsonFile(String execute) {
         Path path = FileSystems.getDefault().getPath(execute);
