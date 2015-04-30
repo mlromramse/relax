@@ -22,7 +22,7 @@ public class RelaxFaviconHandler extends AbstractHandler {
 					URL icoUrl = this.getClass().getResource("romram.ico");
 					byte[] icoContent = null;
 					try {
-						icoContent = RelaxIO.readInputStream(icoUrl.openStream());
+						icoContent = new RelaxIO().readInputStream(icoUrl.openStream());
 					} catch (IOException e) {
 						e.printStackTrace();
 					}

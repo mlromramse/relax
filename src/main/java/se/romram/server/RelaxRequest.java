@@ -2,15 +2,13 @@ package se.romram.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.romram.helpers.RelaxIO;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by micke on 2014-12-31.
@@ -24,14 +22,20 @@ public class RelaxRequest {
     private StringBuffer requestBuffer = null;
     private byte[] payloadBuffer = null;
 
-    private String method;
-    private String pathAndQuery;
+	private String schema;
+	private String userinfo;
+    private String host;
+	private int port;
     private String path = "";
     private String queryString;
-    private String host;
+	private String fragment;
+    private String method;
+    private String pathAndQuery;
     private String userAgent;
     private String accept;
     private int contentLength = -1;
+	private String contentType;
+	private Locale locale;
 
     private Map<String, List<String>> queryMap;
 	private Map<String, String> headerMap;
@@ -225,12 +229,7 @@ public class RelaxRequest {
 					log.error("The inputStream is null!");
 				}
 
-				BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-				BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-
-                //ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream();
-
-				requestBuffer = getHeadersFromStream(bufferedInputStream);
+				requestBuffer = getHeadersFromStream(inputStream);
 				parseHeaders(requestBuffer);
 
 				boolean doWriteContinue = requestBuffer.indexOf("Expect:")!=-1 && requestBuffer.indexOf("100-continue")!=-1;
@@ -251,9 +250,9 @@ public class RelaxRequest {
                 log.debug("About to read {} bytes", contentLength);
 
                 if (contentLength > 0) {
-                    payloadBuffer = read(bufferedInputStream, contentLength);
+					payloadBuffer = new RelaxIO().readInputStream(inputStream, contentLength);
                     requestBuffer.append(new String(payloadBuffer, relaxServer.charsetName));
-                }
+				}
             } catch (IOException ex) {
                 log.error("An exception of type {} with message '{}' was encountered when reading the inputstream from socket [{}]."
                         , ex.getClass().getSimpleName()
@@ -281,51 +280,8 @@ public class RelaxRequest {
 		}
 	}
 
-	private byte[] read(BufferedInputStream bufferedInputStream, int numChars) throws IOException {
-		byte[] buf = new byte[numChars];
-		int totRead = 0;
-		int read = 1;
-		while (read > 0 && totRead < numChars) {
-			read = bufferedInputStream.read(buf, totRead, numChars - totRead);
-			totRead = read > 0 ? totRead + read : totRead;
-			log.debug("{} bytes of {} total was read.", totRead, numChars);
-		}
-		return buf;
-	}
-
-	private StringBuffer getHeadersFromStream(BufferedInputStream bufferedInputStream) throws IOException {
-		StringBuffer result = new StringBuffer();
-
-		String line;
-		while (!(line = readLine(bufferedInputStream)).isEmpty()) {
-			result.append(line);
-			result.append("\n");
-		}
-		result.append("\n");
-
-		return result;
-	}
-
-	private String readLine(BufferedInputStream bufferedInputStream) throws IOException {
-		ByteBuffer byteBuffer = ByteBuffer.allocate(8000);
-
-		boolean done = false;
-		byte[] byteArray = new byte[1];
-		while (!done && bufferedInputStream.read(byteArray) > 0) {
-			if (byteArray[0] == '\n') {
-				break;
-			}
-			if (byteArray[0] != '\r') {
-				byteBuffer.put(byteArray[0]);
-			}
-		}
-		int pos = byteBuffer.position();
-		byte[] tmp = new byte[pos];
-		byteBuffer.position(0);
-		byteBuffer.get(tmp, 0, pos);
-		byteBuffer.position(pos);
-		String result = new String(tmp, "utf8");
-		return result;
+	private StringBuffer getHeadersFromStream(InputStream inputStream) throws IOException {
+		return new StringBuffer(new String(new RelaxIO().readInputStreamUntilTwoNewLines(inputStream)));
 	}
 
 	private void writeContinue() {

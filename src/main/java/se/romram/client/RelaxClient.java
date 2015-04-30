@@ -286,7 +286,7 @@ public class RelaxClient {
             if (httpStatus.isOK()) {
 				InputStream inputStream = urlConnection.getInputStream();
 				waitTime = stopWatch.lap().getLapTime();
-				response = RelaxIO.readInputStream(inputStream);
+				response = new RelaxIO().readInputStream(inputStream);
 			} else {
 				if (isExceptionsToBeThrown)
 					throw new UncheckedHttpStatusCodeException(httpStatus);
@@ -318,7 +318,7 @@ public class RelaxClient {
 		} catch (IOException e) {
 			if (urlConnection instanceof HttpURLConnection) {
 				try {
-					response = RelaxIO.readInputStream(((HttpURLConnection) urlConnection).getErrorStream());
+					response = new RelaxIO().readInputStream(((HttpURLConnection) urlConnection).getErrorStream());
 				} catch (IOException e1) {
 					//TODO FIX
 					httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
