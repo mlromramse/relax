@@ -15,6 +15,8 @@ public class Properties {
     public int port = 8080;
 	public int threads = 10;
     public String path = ".";
+	public String method = null;
+	public String url = "";
 	public String execute = null;
 	public Map<String, String> argMap = new HashMap<>();
     public List<String> handlerClassNameList = new ArrayList<>();
@@ -30,6 +32,10 @@ public class Properties {
                 port = getIntValue(arg);
 				continue;
             }
+			if (arg.toLowerCase().startsWith("get=")) {
+				method = "GET";
+				url = getValue(arg);
+			}
 			if (arg.toLowerCase().startsWith("threads=")) {
 				threads = getIntValue(arg);
 				continue;

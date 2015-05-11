@@ -3,6 +3,7 @@ package se.romram.main;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.romram.client.RelaxClient;
+import se.romram.enums.HttpMethod;
 import se.romram.handler.DefaultFileHandler;
 import se.romram.handler.RelaxHandler;
 import se.romram.helpers.SimpleJson;
@@ -30,6 +31,8 @@ public class Main {
     public static final void main(String[] args) throws IOException {
         Properties props = new Properties(args);
 
+		doHTTPRequest(props);
+
         RelaxServer server = new RelaxServer(props.port);
 		addPropertyAddedHandlers(props, server);
 
@@ -42,6 +45,15 @@ public class Main {
 			executeJsonFile(props.execute);
 		}
     }
+
+	private static void doHTTPRequest(Properties props) {
+		if (props.method != null) {
+			RelaxClient client = new RelaxClient();
+			client.perform(props.method, props.url);
+			log.debug("{} {}", props.method, props.url);
+			System.exit(0);
+		}
+	}
 
 	private static void addPropertyAddedHandlers(Properties props, RelaxServer server) {
 		if (props.handlerClassNameList.size()>0) {
