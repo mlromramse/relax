@@ -195,7 +195,7 @@ public class RelaxRequest {
 			e.printStackTrace();
 		}
 		if (pathAndQuery.indexOf("http") == 0) {
-			pathAndQuery = pathAndQuery.replaceAll("https?://", "");
+			pathAndQuery = pathAndQuery.replaceFirst("https?://", "");
 		}
 		int p=pathAndQuery.indexOf("/");
 		p = p==-1 ? pathAndQuery.length() : p;
