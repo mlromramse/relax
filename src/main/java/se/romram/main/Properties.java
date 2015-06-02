@@ -17,6 +17,7 @@ public class Properties {
     public String path = ".";
 	public String method = null;
 	public String url = "";
+	public List<String> headerList = new ArrayList<>();
 	public String execute = null;
 	public Map<String, String> argMap = new HashMap<>();
     public List<String> handlerClassNameList = new ArrayList<>();
@@ -35,6 +36,9 @@ public class Properties {
 			if (arg.toLowerCase().startsWith("get=")) {
 				method = "GET";
 				url = getValue(arg);
+			}
+			if (arg.toLowerCase().startsWith("header=")) {
+				headerList.add(getValue(arg));
 			}
 			if (arg.toLowerCase().startsWith("threads=")) {
 				threads = getIntValue(arg);
@@ -63,7 +67,14 @@ public class Properties {
         if (split.length==1) {
             throw new RuntimeException(String.format("The argument %s is malformed. An argument should be entered as name=value.", arg));
         }
-        return split[1];
+		String value = "";
+		for (int index=1; index<split.length; index++) {
+			value += index==1 ? split[index] : "=" + split[index];
+		}
+		if (value.charAt(0)=='"' && value.charAt(value.length()-1)=='"') {
+			return value.substring(1, value.length()-2);
+		}
+        return value;
     }
 
 

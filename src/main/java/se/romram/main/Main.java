@@ -49,8 +49,14 @@ public class Main {
 	private static void doHTTPRequest(Properties props) {
 		if (props.method != null) {
 			RelaxClient client = new RelaxClient();
+			String[] headers =
+					props.headerList.toArray(new String[props.headerList.size()]);
+			client.addRequestHeaders(headers);
 			client.perform(props.method, props.url);
-			log.debug("{} {}", props.method, props.url);
+			log.info("{} {}", props.method, props.url);
+			log.info(client.getResponseHeaderFieldsAsFormattedString());
+			log.info("The request took {} ms.", client.getLatency());
+			System.out.print(client.toString());
 			System.exit(0);
 		}
 	}
