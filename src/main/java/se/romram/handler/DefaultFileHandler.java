@@ -30,6 +30,10 @@ public class DefaultFileHandler implements RelaxHandler {
 
     private Map<String, String> extensionContentTypeMap;
 
+	public DefaultFileHandler() {
+		this(".");
+	}
+
 	public DefaultFileHandler(String pathAsString) {
         Path path = FileSystems.getDefault().getPath(pathAsString);
         this.pathAsString = pathAsString;
