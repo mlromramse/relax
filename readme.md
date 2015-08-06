@@ -60,6 +60,9 @@ of the parameters:
 * path=/absolute/or/relative/path/to/a/directory
 * threads=20
 * execute=jsonfile (Read more in the RelaxClient section below)
+* header=key:value (Can be used multiple times)
+* get=url (Make a get request)
+* handlerclass=package.and.classname (External class has to be in classpath, can be used multiple times)
 
 ##### Use the parameters like this:
 
