@@ -83,6 +83,10 @@ public class RelaxServer extends Thread {
         return this;
     }
 
+	public int getPort() {
+		return port;
+	}
+
     public String getContentType() {
         return contentType;
     }
