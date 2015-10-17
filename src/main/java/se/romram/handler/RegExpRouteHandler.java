@@ -13,6 +13,10 @@ import java.util.List;
 public class RegExpRouteHandler implements RelaxHandler {
 	List<RelaxRoute> routeList = new ArrayList<>();
 
+	public RegExpRouteHandler() {
+
+	}
+
 	public RegExpRouteHandler(HttpMethod httpMethod, String regExp, RelaxHandler defaultHandler) {
 		addRoute(httpMethod, regExp, defaultHandler);
 	}
@@ -20,7 +24,7 @@ public class RegExpRouteHandler implements RelaxHandler {
 	@Override
 	public boolean handle(RelaxRequest relaxRequest, RelaxResponse relaxResponse) {
 		RelaxHandler handler = findHandler(relaxRequest);
-		return handler.handle(relaxRequest, relaxResponse);
+		return handler==null ? false : handler.handle(relaxRequest, relaxResponse);
 	}
 
 	public RegExpRouteHandler addRoute(HttpMethod httpMethod, String regExp, RelaxHandler relaxHandler) {
@@ -30,6 +34,9 @@ public class RegExpRouteHandler implements RelaxHandler {
 	}
 
 	private RelaxHandler findHandler(RelaxRequest relaxRequest) {
+		if (routeList.size() == 0) {
+			return null;
+		}
 		for (RelaxRoute route: routeList) {
 			if (route.match(relaxRequest)) {
 				return route.getRelaxHandler();
