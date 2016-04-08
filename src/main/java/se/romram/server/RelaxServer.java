@@ -14,6 +14,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,13 +46,20 @@ public class RelaxServer extends Thread {
 	private RelaxStatsHandler relaxStatsHandler = new RelaxStatsHandler();
 	private RelaxFaviconHandler relaxFaviconHandler = new RelaxFaviconHandler();
 
-    public RelaxServer(int port) throws IOException {
+	public RelaxServer(int port) throws IOException {
+		this(port, 50);
+	}
+    public RelaxServer(int port, int queue) throws IOException {
         this.port = port;
-        serverSocket = new ServerSocket(port);
+        serverSocket = new ServerSocket(port, queue);
     }
 
 	public RelaxServer(int port, RelaxHandler handler) throws IOException {
 		this(port);
+		addRelaxHandler(handler);
+	}
+	public RelaxServer(int port, int queue, RelaxHandler handler) throws IOException {
+		this(port, queue);
         addRelaxHandler(handler);
 	}
 
@@ -60,7 +68,12 @@ public class RelaxServer extends Thread {
         this.executor = executor;
     }
 
-    public RelaxServer setExecutor(Executor executor) {
+	public RelaxServer(int port, int queue, RelaxHandler handler, Executor executor) throws IOException {
+		this(port, queue, handler);
+		this.executor = executor;
+	}
+
+	public RelaxServer setExecutor(Executor executor) {
         this.executor = executor;
         return this;
     }
@@ -100,9 +113,15 @@ public class RelaxServer extends Thread {
 		addRelaxHandler(relaxFaviconHandler);
 		addRelaxHandler(relaxStatsHandler);
 		active = true;
-		log.info("The server is active with master handler {} and monitors port {}."
-				, relaxHandlerList.get(0).getClass().getSimpleName()
-				, port);
+		try {
+			log.error("The server is active with master handler {} and monitors port {} with a buffer size of {}."
+					, relaxHandlerList.get(0).getClass().getSimpleName()
+					, serverSocket.getLocalPort()
+					, serverSocket.getReceiveBufferSize()
+			);
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
 		for (RelaxHandler handler : relaxHandlerList) {
 			log.debug(" * using handler {}.", handler.getClass().getSimpleName());
 		}

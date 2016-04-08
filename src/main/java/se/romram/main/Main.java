@@ -33,7 +33,7 @@ public class Main {
 
 		doHTTPRequest(props);
 
-        RelaxServer server = new RelaxServer(props.port);
+        RelaxServer server = new RelaxServer(props.port, props.queue);
 		addPropertyAddedHandlers(props, server);
 
 		if (props.threads > 10) {

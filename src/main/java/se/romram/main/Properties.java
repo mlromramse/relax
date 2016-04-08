@@ -14,6 +14,7 @@ import java.util.Map;
 public class Properties {
     public int port = 8080;
 	public int threads = 10;
+	public int queue = 50;
     public String path = ".";
 	public String method = null;
 	public String url = "";
@@ -36,12 +37,18 @@ public class Properties {
 			if (arg.toLowerCase().startsWith("get=")) {
 				method = "GET";
 				url = getValue(arg);
+				continue;
 			}
 			if (arg.toLowerCase().startsWith("header=")) {
 				headerList.add(getValue(arg));
+				continue;
 			}
 			if (arg.toLowerCase().startsWith("threads=")) {
 				threads = getIntValue(arg);
+				continue;
+			}
+			if (arg.toLowerCase().startsWith("queue=")) {
+				queue = getIntValue(arg);
 				continue;
 			}
 			if (arg.toLowerCase().startsWith("execute=")) {
@@ -51,6 +58,7 @@ public class Properties {
 			if (arg.toLowerCase().startsWith("handlerclass=")) {
 				String handlerClass = getValue(arg);
 				handlerClassNameList.add(handlerClass);
+				continue;
 			}
 			//TODO Optimize
 			String[] split = arg.split("=");
