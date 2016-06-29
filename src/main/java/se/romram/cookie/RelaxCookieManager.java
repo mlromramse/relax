@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by micke on 2015-01-04.
  */
 public class RelaxCookieManager {
+    private static String SET_COOKIE = "Set-Cookie";
     private Map<String, RelaxCookie> relaxCookieMap;
 
     public Map<String, RelaxCookie> getCookieMap() {
@@ -21,7 +22,6 @@ public class RelaxCookieManager {
 
     public void updateCookiesFromHeaderFields(Map<String, List<String>> responseHeaderFields) {
         for (String key : responseHeaderFields.keySet()) {
-            String SET_COOKIE = "Set-Cookie";
             if (SET_COOKIE.equalsIgnoreCase(key)) {
                 for (String cookieString : responseHeaderFields.get(key)) {
                     RelaxCookie cookie = new RelaxCookie(cookieString);
