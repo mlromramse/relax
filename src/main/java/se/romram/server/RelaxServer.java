@@ -218,7 +218,9 @@ public class RelaxServer extends Thread {
                 e.printStackTrace();
             } catch (InvocationTargetException e) {
                 e.printStackTrace();
-            }
+            } catch (Exception e) {
+            	e.printStackTrace();
+			}
         }
         return pid;
     }

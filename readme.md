@@ -173,10 +173,15 @@ your filesystem as requested.
 If nothing is requested or if you select a directory a file listing is returned.
 If the user agent tells the server that it can handle HTML that is returned with working links
 otherwise the listing is returned as plain text.
-_Hidden files are not returned._
+
+New from version 1.4 is the ability to add the header `Accept: application/json` or query parameter 
+`accept=json` to get the listing as json. As a side effect you can add `accept=plain` to get the
+ response as plain text in your browser.
+
+_NB!! Hidden files are not returned._
 
 Go to this url `http://localhost:8080` with both your favourite web browser and cUrl to see 
-the difference. 
+the difference. Test `curl -H 'Accept: application/json' http://localhost:8080` to receive json.
 
 ##### RelaxFaviconHandler
 To be able to give a web browser the favicon it always asks for this handler is always
@@ -219,9 +224,12 @@ It is returned as json and can look like this:
 _Most of these data items is collected from the underlying OS. The sysload value 
 is an system overall value. 
 Process values is only returned on a Linux platform and are in bytes and 
-milliseconds where applicable. 
-The cpu% item tells the cpu utilization of this process only as do the other 
+milliseconds where applicable._ 
+
+_The cpu% item tells the cpu utilization of this process only as do the other 
 values within the process element._
+
+_NB!!  Peeking into process is not possible using java 9 at the moment._
 
 
 

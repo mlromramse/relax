@@ -156,6 +156,16 @@ public class DefaultFileHandler implements RelaxHandler {
 
     private byte[] getPayload(Path filePath, RelaxRequest request, RelaxResponse response) throws IOException {
         boolean isHTMLAware = request.getAccept().toLowerCase().contains("text/html");
+        boolean isJSONAware = request.getAccept().toLowerCase().contains("application/json");
+		String accept = request.getParameter("accept");
+		if (accept != null && accept.toLowerCase().contains("plain")) {
+			isHTMLAware = false;
+			isJSONAware = false;
+		}
+        if (accept != null && accept.toLowerCase().contains("json")) {
+        	isHTMLAware = false;
+        	isJSONAware = true;
+		}
         if (filePath.toFile().isFile()) {
 			if (filePath.toFile().isHidden()) throw new IOException("File not found.");
             return Files.readAllBytes(filePath);
@@ -167,29 +177,78 @@ public class DefaultFileHandler implements RelaxHandler {
                 response.setContentType("text/html");
                 buf.append("<html><head><meta charset=\"utf-8\" /></head><body><table>");
             }
+            if (isJSONAware) {
+            	response.setContentType("application/json");
+            	buf.append("[\n");
+			}
+			String prefix = "\t";
             for (File file : files) {
 				if (!file.isHidden()) {
-					if (isHTMLAware) buf.append("<tr><td>");
-					buf.append(new Date(file.lastModified()));
-					if (isHTMLAware) buf.append("</td><td style=\"text-align:right\">");
-					else buf.append(" ");
-					buf.append(String.format("%10d", file.length()));
 					if (isHTMLAware) {
+						buf.append("<tr><td>");
+						buf.append(new Date(file.lastModified()));
+					} else if (isJSONAware) {
+						buf.append(prefix);
+						buf.append("{ \"date\": ");
+						buf.append(file.lastModified());
+						buf.append(", ");
+					} else {
+						buf.append(new Date(file.lastModified()));
+					}
+					if (isHTMLAware) {
+						buf.append("</td><td style=\"text-align:right\">");
+						buf.append(file.length());
+						buf.append("</td>");
+					} else if (isJSONAware) {
+						buf.append("\"length\": ");
+						buf.append(file.length());
+						buf.append(", ");
+					} else {
+						buf.append(" ");
+						buf.append(String.format("%10d", file.length()));
+					}
+					if (isHTMLAware || isJSONAware) {
+						String requestURL = request.getRequestURL();
+						if (requestURL.charAt(requestURL.length() - 1) != '/') requestURL += "/";
 						String path = request.getPath();
 						if (path.charAt(path.length() - 1) != '/') path += "/";
-						buf.append("</td><td><a href=\"").append(path).append(file.getName()).append("\">");
+						if (isHTMLAware) {
+							buf.append("<td><a href=\"");
+						} else {
+							buf.append("\"path\": \"");
+						}
+						buf.append(path).append(file.getName());
+						if (isHTMLAware) {
+							buf.append("\">");
+						} else {
+							buf.append("\", \"href\": \"");
+							buf.append(requestURL);
+							buf.append(file.getName());
+							if (accept != null) {
+								buf.append("?accept=");
+								buf.append(accept);
+							}
+							buf.append("\", \"dir\": ");
+							buf.append(file.isDirectory());
+							buf.append(", \"name\": \"");
+						}
 					} else {
 						buf.append(" ");
 					}
 					buf.append(file.getName());
 					if (file.isDirectory()) buf.append("/");
 					if (isHTMLAware) buf.append("</a></td></tr>");
+					if (isJSONAware) buf.append("\" }");
 					else buf.append("\n");
+					prefix = ",\n\t";
 				}
             }
             if (isHTMLAware) {
                 buf.append("</table></body></html>");
             }
+			if (isJSONAware) {
+				buf.append("\n]");
+			}
             return buf.toString().getBytes();
         }
         throw new IOException("File not found!");
