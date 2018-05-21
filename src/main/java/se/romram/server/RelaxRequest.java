@@ -147,7 +147,10 @@ public class RelaxRequest {
             for(String query : queryString.split("&")) {
                 String[] queryArr = query.split("=");
                 String queryKey = queryArr[0].trim();
-                String queryValue = queryArr[1].trim();
+                String queryValue = "true";
+                if (queryArr.length > 1) {
+                    queryValue = queryArr[1].trim();
+                }
                 List<String> queryItemList = queryMap.get(queryKey);
                 if (queryItemList == null) {
                     queryItemList = new ArrayList<>();
