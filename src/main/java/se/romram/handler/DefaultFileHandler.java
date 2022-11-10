@@ -257,6 +257,7 @@ public class DefaultFileHandler implements RelaxHandler {
     private boolean put(Path filePath, RelaxRequest request, RelaxResponse response) {
         try {
             Files.createDirectories(filePath.getParent());
+			Files.createFile(filePath);
 			OutputStream fileOutputStream = Files.newOutputStream(filePath);
 			fileOutputStream.write(request.getPayload());
 			fileOutputStream.flush();

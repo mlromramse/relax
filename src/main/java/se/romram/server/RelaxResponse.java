@@ -82,7 +82,7 @@ public class RelaxResponse {
                 contentLength = Integer.parseInt(String.format("%s", values));
             }
             addHeaders("Content-Length: " + contentLength);
-            addHeaders("Content-Type: " + contentType + ";encoding: " + relaxServer.charsetName);
+            addHeaders("Content-Type: " + contentType + "; charset=" + relaxServer.charsetName);
             writeHeaders(bufferedOutputStream, status);
 			if (response != null) {
 				bufferedOutputStream.write(response);
